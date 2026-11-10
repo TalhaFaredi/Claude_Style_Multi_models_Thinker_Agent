@@ -2,9 +2,9 @@
 
 A local AI workspace with **Simple**, **Thinker**, **Planner** and **Auto** modes. Choose a model, set a question budget, attach documents and watch the work progress in one chat interface.
 
-**Next.js + React frontend ? FastAPI + Python backend ? OpenRouter / NVIDIA model access**
+**Next.js + React frontend | FastAPI + Python backend | OpenRouter / NVIDIA model access**
 
-[Quick start](#quick-start) ? [Screenshots](#screenshots) ? [How it works](#how-it-works) ? [Code guide](#code-guide) ? [Tests](#tests-and-verification)
+[Quick start](#quick-start) | [Screenshots](#screenshots) | [How it works](#how-it-works) | [Code guide](#code-guide) | [Tests](#tests-and-verification)
 
 ![The assistant home screen with mode choices, setup and message composer](docs/screenshots/01-home.png)
 
@@ -168,6 +168,23 @@ The backend owns model calls and execution decisions. The frontend displays type
 
 **Files.** Fingerprints and reader/version caches reuse saved readings. Direct text extraction is local; paid OCR/vision reading shows its estimate and approved maximum first. Readers support PDFs, images and Office files, with tables, chart descriptions and page citations.
 
+### Uploaded PDFs and images, simply explained
+
+1. **Upload and inspect:** the original is saved locally under `backend/data/`, checked for duplicate content and inspected without a paid model call. The upload limit is 25 MB per file.
+2. **Read the content:** the reader depends on the page type:
+
+   | Content | What happens |
+   |---|---|
+   | Normal PDF text and tables | Text is extracted locally for free; the layout parser preserves table cells. |
+   | Scanned PDF or uploaded image | OCR (text recognition) extracts readable text. Auto tries local OCR first; configured API/vision readers can also transcribe text. |
+   | Detected PDF chart or diagram | With chart descriptions enabled, a vision model describes the rendered page; its image can also be retained. |
+
+3. **Review the cost:** choose the reader/pages and approve the displayed maximum before paid reading. Paid readers send the selected page images to their provider. **Text only** is free but cannot read scans or explain charts.
+4. **Ask questions:** the app saves a Document Card and searchable chunks. It sends the full extracted content when it fits, or retrieves relevant parts for the answer with file/page references.
+5. **Reuse the reading:** the same file, reader and parser version reuse cached pages without another reading charge. Answering questions still uses model tokens; optional meaning-search indexing can also cost money.
+
+**Image limitation:** uploaded images currently follow the text-transcription path. They do not automatically receive a general photo/scene description. Unreadable pages are marked as weak rather than treated as successfully read.
+
 **Memory.** Original messages stay in the archive. Context alarms expose summarizing and continuation controls; checked compaction preserves critical details. Export/import can retain messages, facts and cached file readings, with optional password protection.
 
 **Outputs.** Text, Markdown, PDF, PNG, static HTML and code share final checks. Failed checks are shown; an unchecked file must not be presented as checked.
@@ -176,35 +193,35 @@ The backend owns model calls and execution decisions. The frontend displays type
 
 ```text
 .
-??? .env.example                # Server configuration template; no real keys
-??? backend/
-?   ??? app/
-?   ?   ??? main.py             # FastAPI startup and route registration
-?   ?   ??? api/                # HTTP/SSE endpoints and request schemas
-?   ?   ??? pipeline/           # Gateway, router, run lifecycle and checker
-?   ?   ??? modes/              # Simple, Thinker and Planner implementations
-?   ?   ??? llm/                # Provider client, retries and model registry
-?   ?   ??? core/               # Config, SQLite, cost meter and privacy
-?   ?   ??? files/              # Reading, OCR, caching and retrieval
-?   ?   ??? memory/             # Archive, facts, context and portability
-?   ?   ??? tools/              # Search, calculator, file search and sandbox
-?   ?   ??? output/             # Artifact builders and final validation
-?   ?   ??? prompts/            # Prompt templates
-?   ?   ??? skills/             # App-loaded instruction files
-?   ??? tests/                  # Offline regressions and opt-in live gates
-?   ??? requirements.txt
-??? frontend/
-?   ??? src/app/                # Next.js entry point and bundled fonts
-?   ??? src/components/         # Chat blocks, layout, dialogs and settings
-?   ??? src/domain/             # Shared UI types, limits and event reducer
-?   ??? src/services/           # API client, SSE and offline demo runners
-?   ??? src/store/              # Zustand state
-?   ??? src/styles/             # Design tokens and responsive CSS
-?   ??? tests/                  # Unit and transport tests
-?   ??? e2e/                    # Browser checks and screenshot capture
-??? scripts/dev.ps1             # Windows launcher for both services
-??? docs/screenshots/           # README images and reproduction steps
-??? spec-audit/                 # Selected implementation/verification reports
+|-- .env.example                # Server configuration template; no real keys
+|-- backend/
+|   |-- app/
+|   |   |-- main.py             # FastAPI startup and route registration
+|   |   |-- api/                # HTTP/SSE endpoints and request schemas
+|   |   |-- pipeline/           # Gateway, router, run lifecycle and checker
+|   |   |-- modes/              # Simple, Thinker and Planner implementations
+|   |   |-- llm/                # Provider client, retries and model registry
+|   |   |-- core/               # Config, SQLite, cost meter and privacy
+|   |   |-- files/              # Reading, OCR, caching and retrieval
+|   |   |-- memory/             # Archive, facts, context and portability
+|   |   |-- tools/              # Search, calculator, file search and sandbox
+|   |   |-- output/             # Artifact builders and final validation
+|   |   |-- prompts/            # Prompt templates
+|   |   |-- skills/             # App-loaded instruction files
+|   |-- tests/                  # Offline regressions and opt-in live gates
+|   |-- requirements.txt
+|-- frontend/
+|   |-- src/app/                # Next.js entry point and bundled fonts
+|   |-- src/components/         # Chat blocks, layout, dialogs and settings
+|   |-- src/domain/             # Shared UI types, limits and event reducer
+|   |-- src/services/           # API client, SSE and offline demo runners
+|   |-- src/store/              # Zustand state
+|   |-- src/styles/             # Design tokens and responsive CSS
+|   |-- tests/                  # Unit and transport tests
+|   |-- e2e/                    # Browser checks and screenshot capture
+|-- scripts/dev.ps1             # Windows launcher for both services
+|-- docs/screenshots/           # README images and reproduction steps
+|-- spec-audit/                 # Selected implementation/verification reports
 ```
 
 Follow a request through these files:
@@ -247,7 +264,7 @@ Request/response schemas and runnable examples are available in `/docs`. See [ba
 
 ## Tests and verification
 
-**Offline backend tests ? no provider credits:**
+**Offline backend tests - no provider credits:**
 
 ```powershell
 cd backend
