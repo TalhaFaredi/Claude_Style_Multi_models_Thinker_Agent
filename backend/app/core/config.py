@@ -1,0 +1,110 @@
+"""Configuration: .env loading, the fixed safety limits from the spec, and tunable defaults.
+
+Secrets are read from the repo-root `.env` (or real environment variables). They are never logged,
+returned by the API, or written to disk by this app (see app/core/privacy.py).
+"""
+from __future__ import annotations
+
+import os
+import re
+from dataclasses import dataclass
+from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parents[1]          # backend/app
+BACKEND_DIR = APP_DIR.parent                           # backend
+REPO_ROOT = BACKEND_DIR.parent
+DATA_DIR = Path(os.environ.get("DATA_DIR", BACKEND_DIR / "data"))
+PROMPTS_DIR = APP_DIR / "prompts"
+SKILLS_DIR = APP_DIR / "skills"
+
+
+def _parse_env_file(path: Path) -> dict[str, str]:
+    """Tolerant .env parser: `key = value`, quotes, comments, BOM, spaces around '='."""
+    out: dict[str, str] = {}
+    if not path.exists():
+        return out
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        m = re.match(r"\s*([^#=\s]+)\s*=\s*(.*?)\s*$", line)
+        if m:
+            out[m.group(1)] = m.group(2).strip("'\"")
+    return out
+
+
+_ENV = {**_parse_env_file(REPO_ROOT / ".env"), **_parse_env_file(BACKEND_DIR / ".env")}
+
+
+def env(*names: str, default: str = "") -> str:
+    """First non-empty value among real env vars and .env entries (case-insensitive names)."""
+    for n in names:
+        for key in (n, n.upper(), n.lower()):
+            v = os.environ.get(key) or _ENV.get(key)
+            if v:
+                return v
+    return default
+
+
+OPENROUTER_KEY = env("OPENROUTER_API_KEY", "open_router_api")
+NVIDIA_KEY = env("NVIDIA_API_KEY", "nvidian_key")
+
+OPENROUTER_URL = "https://openrouter.ai/api/v1"
+NVIDIA_URL = "https://integrate.api.nvidia.com/v1"
+
+
+@dataclass(frozen=True)
+class Limits:
+    """Fixed safety limits (spec Part 1 section 8). The UI cannot raise them."""
+    min_agents: int = 2
+    max_agents: int = 5
+    min_rounds: int = 1
+    max_rounds: int = 3
+    max_tool_calls: int = 10
+    max_retries: int = 2          # per call or step
+    max_replans: int = 2
+    max_plan_steps: int = 20
+    max_parallel_steps: int = 3
+
+
+LIMITS = Limits()
+
+# Context window (spec Part 2 sections 6 and 7)
+ANSWER_RESERVE = 0.15             # share of the window kept free for the answer
+FILES_BUDGET = 0.35               # files up to 35% of the window: full text, else search
+MEMORY_BUDGET = 0.10
+SUMMARY_BUDGET = 0.05
+SKILLS_BUDGET = 0.05              # skills share the "rules, tools: up to 5%" part
+LEVEL_NOTICE, LEVEL_ALARM, LEVEL_COMPACT = 70, 85, 95
+KEEP_LAST_TURNS = 10              # never compacted
+CHUNK_TOKENS = 800
+TOP_CHUNKS = 8
+
+# Working window cap. Every turn re-sends the whole window, so a big window costs real money.
+# 32k keeps testing cheap and makes the 70/85/95% levels reachable. Raise it in Settings.
+DEFAULT_WINDOW_CAP = int(env("WINDOW_CAP_TOKENS", default="32000"))
+
+# Cheap models for the "small model" jobs in the spec (router, judge, checker, memory writer, cards).
+UTILITY_MODEL = env("UTILITY_MODEL", default="meta-llama/llama-3.1-8b-instruct")
+# The Checker decides what reaches the user, so it gets a slightly stronger cheap model. Measured Nov 10, 2026 on
+# file-grounded and plain answers (21 verdicts each): llama-3.1-8b 18/21 (rejected a correct file answer 2 of 3 times),
+# qwen3.7-flash 21/21 at about $0.00002 per check.
+CHECKER_MODEL = env("CHECKER_MODEL", default="qwen/qwen3.7-flash")
+WRITER_MODEL = env("WRITER_MODEL", default="qwen/qwen3.7-flash")
+VISION_MODEL = env("VISION_MODEL", default="qwen/qwen3.7-flash")
+EMBED_MODEL = env("EMBED_MODEL", default="openai/text-embedding-3-small")
+
+# Run limits
+RUN_TIMEOUT_S = int(env("RUN_TIMEOUT_S", default="300"))
+PLANNER_TIMEOUT_S = int(env("PLANNER_TIMEOUT_S", default="900"))
+CALL_TIMEOUT_S = float(env("CALL_TIMEOUT_S", default="90"))
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+MAX_IMPORT_BYTES = 200 * 1024 * 1024
+
+# Show the draft while it streams (best UX); the Checker still runs afterwards and can replace it.
+# Set STREAM_BEFORE_CHECK=0 to hold the draft until it passes (strict "nothing before the Checker").
+STREAM_BEFORE_CHECK = env("STREAM_BEFORE_CHECK", default="0") != "0"
+CHECK_ANSWERS = env("CHECK_ANSWERS", default="1") != "0"
+
+CORS_ORIGINS = [o.strip() for o in env("CORS_ORIGINS", default="http://localhost:3000,http://localhost:3123,http://127.0.0.1:3000").split(",") if o.strip()]
+
+APP_VERSION = "0.2.0"
+EXPORT_FORMAT_VERSION = 1
+PARSE_VERSION = 1   # bump to invalidate the Parse Cache when readers change

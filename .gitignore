@@ -1,0 +1,15 @@
+# secrets: provider keys live in .env and must never be committed
+.env
+.env.*
+!.env.example
+
+node_modules/
+.next/
+.next-*/
+*.tsbuildinfo
+frontend/e2e/shots/
+frontend/e2e/shots*/
+spec-audit/live-acceptance-data/
+spec-audit/live-memory-data/
+spec-audit/live-file-data/
+spec-audit/probe-data/
