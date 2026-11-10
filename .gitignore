@@ -9,6 +9,8 @@ node_modules/
 *.tsbuildinfo
 frontend/e2e/shots/
 frontend/e2e/shots*/
+frontend/e2e/spec-failure.png
+frontend/e2e/spec-results.json
 spec-audit/live-acceptance-data/
 spec-audit/live-memory-data/
 spec-audit/live-file-data/

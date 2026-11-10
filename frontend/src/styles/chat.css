@@ -1,0 +1,40 @@
+/* Message blocks (spec Part 3 §4): user bubble, answer, thinking, team, plan, output. */
+.sys { align-self: center; font-size: 12px; color: var(--muted); background: var(--side); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; text-align: center; max-width: 90%; }
+.user { align-self: flex-end; max-width: 82%; background: var(--chip); padding: 10px 14px; border-radius: 16px 16px 4px 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.ai { display: flex; flex-direction: column; gap: 8px; content-visibility: auto; contain-intrinsic-size: auto 160px; }
+.ai-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ai-name { font-weight: 600; }
+.status { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex: 0 0 auto; }
+.live .dot { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .live .dot { animation: none; } }
+
+.think { border-left: 2px solid #cfc9b8; padding: 2px 0 2px 12px; color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.toggle-line { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: var(--muted); font-size: 13px; padding: 2px 0; min-height: 40px; align-self: flex-start; }
+.toggle-line:hover { color: var(--ink); }
+.toggle-line svg { transition: transform 0.15s; }
+.toggle-line[aria-expanded="true"] svg { transform: rotate(90deg); }
+
+.answer p { margin: 0 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cite { display: inline-flex; align-items: center; font-size: 12px; padding: 1px 7px; border-radius: 6px; background: var(--green-light); color: var(--green-hover); margin-right: 6px; }
+.foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; }
+
+.progress { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; }
+.agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.agent { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.agent.done { border-color: var(--green-line); }
+.agent-role { font-weight: 600; font-size: 13px; }
+
+.step { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+.step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--chip); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.step-num.done { background: var(--green); color: #fff; }
+.step-num.run { background: var(--ink); color: #fff; }
+.step-num.retry { background: var(--rust); color: #fff; }
+.step-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.markdown-heading { font-weight: 600; font-size: 18px; margin: 12px 0 6px; }
+.code-block { max-width: 100%; overflow-x: auto; white-space: pre; background: var(--ground); padding: 12px; border-radius: var(--radius-s); }
+.table-scroll { max-width: 100%; overflow-x: auto; margin: 10px 0; }
+.table-scroll table { border-collapse: collapse; width: 100%; }
+.table-scroll th, .table-scroll td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }

@@ -1,0 +1,474 @@
+{
+  "live": true,
+  "smoke": true,
+  "capUsd": 0.03,
+  "spentUsd": 0.00058245,
+  "models": [
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.7-flash"
+  ],
+  "runs": [
+    {
+      "task": "discount-tax",
+      "variant": "simple",
+      "expectedAnswer": "66",
+      "correct": true,
+      "answer": "The discounted price is $60 (80 × 0.75).  \nAdding 10 % sales tax on $60 gives $6 (0.10 × 60).  \nThus the final price is $66.  \nFINAL: 66",
+      "costUsd": 0.00019754,
+      "budgetUsd": 0.01,
+      "seconds": 21.69,
+      "withinBudget": true,
+      "withinTime": true,
+      "status": "done",
+      "routedMode": "simple",
+      "calls": [
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "router",
+          "in_tokens": 291,
+          "out_tokens": 123,
+          "cost": 1.074e-05,
+          "ms": 5054,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "answer",
+          "in_tokens": 0,
+          "out_tokens": 0,
+          "cost": 0.0,
+          "ms": 27,
+          "ok": 0,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "answer",
+          "in_tokens": 342,
+          "out_tokens": 136,
+          "cost": 2.93e-05,
+          "ms": 1854,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "checker",
+          "in_tokens": 257,
+          "out_tokens": 48,
+          "cost": 7.06e-06,
+          "ms": 2393,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "answer:retry",
+          "in_tokens": 444,
+          "out_tokens": 254,
+          "cost": 4.888e-05,
+          "ms": 2921,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "checker",
+          "in_tokens": 293,
+          "out_tokens": 33,
+          "cost": 7.18e-06,
+          "ms": 1771,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "answer:retry",
+          "in_tokens": 480,
+          "out_tokens": 322,
+          "cost": 5.948e-05,
+          "ms": 2558,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "checker",
+          "in_tokens": 278,
+          "out_tokens": 35,
+          "cost": 6.96e-06,
+          "ms": 1888,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "qwen/qwen3.7-flash",
+          "stage": "memory:ledger",
+          "in_tokens": 199,
+          "out_tokens": 169,
+          "cost": 2.794e-05,
+          "ms": 2507,
+          "ok": 1,
+          "usage_estimated": 0
+        }
+      ],
+      "calibration": [
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 351,
+          "reportedPromptTokens": 291,
+          "usageEstimated": false,
+          "actualToEstimate": 0.8291,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 342,
+          "reportedPromptTokens": 342,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 274,
+          "reportedPromptTokens": 257,
+          "usageEstimated": false,
+          "actualToEstimate": 0.938,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 464,
+          "reportedPromptTokens": 444,
+          "usageEstimated": false,
+          "actualToEstimate": 0.9569,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 288,
+          "reportedPromptTokens": 293,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0174,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 477,
+          "reportedPromptTokens": 480,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0063,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 283,
+          "reportedPromptTokens": 278,
+          "usageEstimated": false,
+          "actualToEstimate": 0.9823,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "qwen/qwen3.7-flash",
+          "estimatedPromptTokens": 186,
+          "reportedPromptTokens": 199,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0699,
+          "withinConservativeBound": true
+        }
+      ]
+    },
+    {
+      "task": "syllogism",
+      "variant": "same-independent",
+      "expectedAnswer": "no",
+      "correct": true,
+      "answer": "Both agents agree that a zorp cannot be a tarn.  \n- The Solver states: “Since every zorp is a glim and no glim is a tarn, a zorp cannot be a tarn.”  \n- The Critic explains the same reasoning in categorical logic terms.  \n\nBecause the statements are identical and there is no disagreement, the conclusion is straightforward: a zorp cannot be a tarn.  \n\n**FINAL: no**",
+      "costUsd": 0.00012864000000000002,
+      "budgetUsd": 0.01,
+      "seconds": 12.068,
+      "withinBudget": true,
+      "withinTime": true,
+      "status": "done",
+      "routedMode": "thinker",
+      "calls": [
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "router",
+          "in_tokens": 287,
+          "out_tokens": 111,
+          "cost": 1.018e-05,
+          "ms": 5467,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "thinker:agent",
+          "in_tokens": 237,
+          "out_tokens": 82,
+          "cost": 1.859e-05,
+          "ms": 935,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "thinker:agent",
+          "in_tokens": 243,
+          "out_tokens": 226,
+          "cost": 3.893e-05,
+          "ms": 1850,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "thinker:compose",
+          "in_tokens": 430,
+          "out_tokens": 196,
+          "cost": 4.034e-05,
+          "ms": 2140,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "checker",
+          "in_tokens": 310,
+          "out_tokens": 21,
+          "cost": 7.04e-06,
+          "ms": 1608,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "qwen/qwen3.7-flash",
+          "stage": "memory:ledger",
+          "in_tokens": 192,
+          "out_tokens": 60,
+          "cost": 1.356e-05,
+          "ms": 979,
+          "ok": 1,
+          "usage_estimated": 0
+        }
+      ],
+      "calibration": [
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 341,
+          "reportedPromptTokens": 287,
+          "usageEstimated": false,
+          "actualToEstimate": 0.8416,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 213,
+          "reportedPromptTokens": 237,
+          "usageEstimated": false,
+          "actualToEstimate": 1.1127,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 221,
+          "reportedPromptTokens": 243,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0995,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 383,
+          "reportedPromptTokens": 430,
+          "usageEstimated": false,
+          "actualToEstimate": 1.1227,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 333,
+          "reportedPromptTokens": 310,
+          "usageEstimated": false,
+          "actualToEstimate": 0.9309,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "qwen/qwen3.7-flash",
+          "estimatedPromptTokens": 176,
+          "reportedPromptTokens": 192,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0909,
+          "withinConservativeBound": true
+        }
+      ]
+    },
+    {
+      "task": "route-file",
+      "variant": "planner",
+      "expectedAnswer": "6",
+      "correct": false,
+      "answer": "Stopped: the time limit was reached. No answer was finished.",
+      "costUsd": 0.00025626999999999996,
+      "budgetUsd": 0.01,
+      "seconds": 45.004,
+      "withinBudget": true,
+      "withinTime": true,
+      "status": "done",
+      "routedMode": "planner",
+      "calls": [
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "router",
+          "in_tokens": 289,
+          "out_tokens": 74,
+          "cost": 8.74e-06,
+          "ms": 3620,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "plan",
+          "in_tokens": 526,
+          "out_tokens": 315,
+          "cost": 5.988e-05,
+          "ms": 3887,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "step",
+          "in_tokens": 402,
+          "out_tokens": 95,
+          "cost": 2.536e-05,
+          "ms": 1593,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "step",
+          "in_tokens": 1645,
+          "out_tokens": 350,
+          "cost": 9.484999999999999e-05,
+          "ms": 740,
+          "ok": 0,
+          "usage_estimated": 1
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "step",
+          "in_tokens": 417,
+          "out_tokens": 165,
+          "cost": 3.561e-05,
+          "ms": 1544,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "step",
+          "in_tokens": 417,
+          "out_tokens": 138,
+          "cost": 3.183e-05,
+          "ms": 1286,
+          "ok": 1,
+          "usage_estimated": 0
+        }
+      ],
+      "calibration": [
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 349,
+          "reportedPromptTokens": 289,
+          "usageEstimated": false,
+          "actualToEstimate": 0.8281,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 528,
+          "reportedPromptTokens": 526,
+          "usageEstimated": false,
+          "actualToEstimate": 0.9962,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 391,
+          "reportedPromptTokens": 402,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0281,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 409,
+          "reportedPromptTokens": 417,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0196,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 409,
+          "reportedPromptTokens": 417,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0196,
+          "withinConservativeBound": true
+        }
+      ],
+      "expectedMode": "planner",
+      "routeCorrect": true
+    }
+  ],
+  "unrun": [],
+  "dataDirectory": "D:\\projects IUB\\Multi-Agent APP\\spec-audit\\live-acceptance-data\\0cbc78e4ced04ddcbe7247c606e1d054",
+  "scope": "Measured task-set accuracy, not a claim of general correctness",
+  "scores": {
+    "simple": {
+      "attempted": 1,
+      "accuracy": 1.0,
+      "costUsd": 0.00019754,
+      "defaultEligible": false
+    },
+    "same-independent": {
+      "attempted": 1,
+      "accuracy": 1.0,
+      "costUsd": 0.00012864000000000002,
+      "defaultEligible": false
+    },
+    "same-together": {
+      "attempted": 0,
+      "accuracy": null,
+      "costUsd": 0,
+      "defaultEligible": false
+    },
+    "mixed-independent": {
+      "attempted": 0,
+      "accuracy": null,
+      "costUsd": 0,
+      "defaultEligible": false
+    },
+    "mixed-together": {
+      "attempted": 0,
+      "accuracy": null,
+      "costUsd": 0,
+      "defaultEligible": false
+    }
+  },
+  "gates": {
+    "fixedSetComplete": false,
+    "simpleAllCorrect": false,
+    "teamBeatsSimple": false,
+    "routingAllCorrect": false,
+    "allWithinLimits": true
+  },
+  "evaluationVersion": 2,
+  "evaluationNote": "Exact numeric/fraction evaluation accepts Markdown and LaTeX notation. Answers, provider calls and costs were not changed; evaluation was corrected offline."
+}

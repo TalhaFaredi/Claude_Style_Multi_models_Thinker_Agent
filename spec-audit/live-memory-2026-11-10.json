@@ -1,0 +1,35 @@
+{
+  "live": true,
+  "capUsd": 0.005,
+  "model": "qwen/qwen3.7-flash",
+  "facts": 50,
+  "compaction": {
+    "ok": true,
+    "messages": 2,
+    "reason": ""
+  },
+  "recall": [
+    {
+      "stage": "acceptance:after_compaction",
+      "correct": 50,
+      "total": 50,
+      "recall": 1.0,
+      "missing": [],
+      "response": "{\n  \"Fact01\": \"ZX-7113\",\n  \"Fact02\": \"ZX-7126\",\n  \"Fact03\": \"ZX-7139\",\n  \"Fact04\": \"ZX-7152\",\n  \"Fact05\": \"ZX-7165\",\n  \"Fact06\": \"ZX-7178\",\n  \"Fact07\": \"ZX-7191\",\n  \"Fact08\": \"ZX-7204\",\n  \"Fact09\": \"ZX-7217\",\n  \"Fact10\": \"ZX-7230\",\n  \"Fact11\": \"ZX-7243\",\n  \"Fact12\": \"ZX-7256\",\n  \"Fact13\": \"ZX-7269\",\n  \"Fact14\": \"ZX-7282\",\n  \"Fact15\": \"ZX-7295\",\n  \"Fact16\": \"ZX-7308\",\n  \"Fact17\": \"ZX-7321\",\n  \"Fact18\": \"ZX-7334\",\n  \"Fact19\": \"ZX-7347\",\n  \"Fact20\": \"ZX-7360\",\n  \"Fact21\": \"ZX-7373\",\n  \"Fact22\": \"ZX-7386\",\n  \"Fact23\": \"ZX-7399\",\n  \"Fact24\": \"ZX-7412\",\n  \"Fact25\": \"ZX-7425\",\n  \"Fact26\": \"ZX-7438\",\n  \"Fact27\": \"ZX-7451\",\n  \"Fact28\": \"ZX-7464\",\n  \"Fact29\": \"ZX-7477\",\n  \"Fact30\": \"ZX-7490\",\n  \"Fact31\": \"ZX-7503\",\n  \"Fact32\": \"ZX-7516\",\n  \"Fact33\": \"ZX-7529\",\n  \"Fact34\": \"ZX-7542\",\n  \"Fact35\": \"ZX-7555\",\n  \"Fact36\": \"ZX-7568\",\n  \"Fact37\": \"ZX-7581\",\n  \"Fact38\": \"ZX-7594\",\n  \"Fact39\": \"ZX-7607\",\n  \"Fact40\": \"ZX-7620\",\n  \"Fact41\": \"ZX-7633\",\n  \"Fact42\": \"ZX-7646\",\n  \"Fact43\": \"ZX-7659\",\n  \"Fact44\": \"ZX-7672\",\n  \"Fact45\": \"ZX-7685\",\n  \"Fact46\": \"ZX-7698\",\n  \"Fact47\": \"ZX-7711\",\n  \"Fact48\": \"ZX-7724\",\n  \"Fact49\": \"ZX-7737\",\n  \"Fact50\": \"ZX-7750\"\n}",
+      "contextPercent": 2
+    },
+    {
+      "stage": "acceptance:after_import",
+      "correct": 50,
+      "total": 50,
+      "recall": 1.0,
+      "missing": [],
+      "response": "{\n  \"Fact01\": \"ZX-7113\",\n  \"Fact02\": \"ZX-7126\",\n  \"Fact03\": \"ZX-7139\",\n  \"Fact04\": \"ZX-7152\",\n  \"Fact05\": \"ZX-7165\",\n  \"Fact06\": \"ZX-7178\",\n  \"Fact07\": \"ZX-7191\",\n  \"Fact08\": \"ZX-7204\",\n  \"Fact09\": \"ZX-7217\",\n  \"Fact10\": \"ZX-7230\",\n  \"Fact11\": \"ZX-7243\",\n  \"Fact12\": \"ZX-7256\",\n  \"Fact13\": \"ZX-7269\",\n  \"Fact14\": \"ZX-7282\",\n  \"Fact15\": \"ZX-7295\",\n  \"Fact16\": \"ZX-7308\",\n  \"Fact17\": \"ZX-7321\",\n  \"Fact18\": \"ZX-7334\",\n  \"Fact19\": \"ZX-7347\",\n  \"Fact20\": \"ZX-7360\",\n  \"Fact21\": \"ZX-7373\",\n  \"Fact22\": \"ZX-7386\",\n  \"Fact23\": \"ZX-7399\",\n  \"Fact24\": \"ZX-7412\",\n  \"Fact25\": \"ZX-7425\",\n  \"Fact26\": \"ZX-7438\",\n  \"Fact27\": \"ZX-7451\",\n  \"Fact28\": \"ZX-7464\",\n  \"Fact29\": \"ZX-7477\",\n  \"Fact30\": \"ZX-7490\",\n  \"Fact31\": \"ZX-7503\",\n  \"Fact32\": \"ZX-7516\",\n  \"Fact33\": \"ZX-7529\",\n  \"Fact34\": \"ZX-7542\",\n  \"Fact35\": \"ZX-7555\",\n  \"Fact36\": \"ZX-7568\",\n  \"Fact37\": \"ZX-7581\",\n  \"Fact38\": \"ZX-7594\",\n  \"Fact39\": \"ZX-7607\",\n  \"Fact40\": \"ZX-7620\",\n  \"Fact41\": \"ZX-7633\",\n  \"Fact42\": \"ZX-7646\",\n  \"Fact43\": \"ZX-7659\",\n  \"Fact44\": \"ZX-7672\",\n  \"Fact45\": \"ZX-7685\",\n  \"Fact46\": \"ZX-7698\",\n  \"Fact47\": \"ZX-7711\",\n  \"Fact48\": \"ZX-7724\",\n  \"Fact49\": \"ZX-7737\",\n  \"Fact50\": \"ZX-7750\"\n}",
+      "contextPercent": 2
+    }
+  ],
+  "spentUsd": 0.00028153,
+  "passed": true,
+  "withinBudget": true,
+  "estimatedCharges": 0
+}

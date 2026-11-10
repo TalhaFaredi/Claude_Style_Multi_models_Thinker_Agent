@@ -1,0 +1,44 @@
+/* Design tokens (spec Part 3 §2). Change a colour here and the whole app follows. */
+:root {
+  --ground: #faf9f5;
+  --side: #f2f0e8;
+  --surface: #ffffff;
+  --ink: #141413;
+  --ink-soft: #3d3d3a;
+  --muted: #5e5d59; /* 4.5:1 contrast on ground */
+
+  --green: #1f6b4a;
+  --green-hover: #13573a;
+  --green-light: #e3efe7;
+  --green-wash: #f4f9f6;
+  --green-ring: #cfe3d7;
+  --green-line: #b9d6c5;
+
+  --amber: #b7791f;
+  --amber-bg: #fcefd6;
+  --amber-ink: #7a4b00;
+  --amber-wash: #fff8ea;
+  --amber-line: #edcf96;
+  --rust: #b4532a;
+  --rust-wash: #fff3e8;
+  --rust-line: #edb892;
+  --red: #8e2f20;
+
+  --line: #e2dfd4;
+  --line-soft: #efece3;
+  --line-strong: #d9d5c8;
+  --line-hover: #b9b4a5;
+  --hover: #e9e6dc;
+  --chip: #ece9e0;
+  --track: #e6e2d7;
+
+  --font-ui: var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-serif-4), Georgia, serif;
+
+  --radius-s: 8px;
+  --radius-m: 10px;
+  --radius-l: 14px;
+  --radius-xl: 18px;
+  --target: 40px; /* minimum touch target */
+  --col: 760px; /* reading column width */
+}
