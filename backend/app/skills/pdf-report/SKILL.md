@@ -1,7 +1,7 @@
 ---
 name: pdf-report
 description: Structure a report or brief that becomes a PDF or Markdown file.
-triggers: [report, pdf, whitepaper, brief, briefing, handout]
+triggers: [report, pdf, whitepaper, briefing, handout]
 modes: [simple, thinker, planner]
 formats: [pdf, md, txt]
 source: inspired by https://github.com/anthropics/skills (pdf skill); rewritten for this app's PDF builder

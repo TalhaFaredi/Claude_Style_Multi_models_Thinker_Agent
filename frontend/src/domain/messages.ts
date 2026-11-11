@@ -1,4 +1,4 @@
-import type { AgentView, ComposerView, PermissionView, OutputFile, PlanStepView } from "./events";
+import type { AgentView, CallUsageView, ComposerView, ModelThinkingView, PermissionView, OutputFile, PlanStepView } from "./events";
 import type { RunKind, SimpleConfig, StepRunMode, TeamConfig } from "./types";
 
 export interface UserMessage {
@@ -39,6 +39,8 @@ export interface AiMessage {
   output: OutputFile | null;
   calls: number;
   costUsd: number;
+  callUsages?: CallUsageView[];
+  modelThinking?: ModelThinkingView[];
   error: string | null;
   /** Shown with the answer (budget stop, failed check after retries...). */
   warning: string | null;

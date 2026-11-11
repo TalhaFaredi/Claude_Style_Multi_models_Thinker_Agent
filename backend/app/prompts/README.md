@@ -17,6 +17,7 @@ The prompt text. $placeholder is filled by render(); write $$ for a literal doll
 
 - A missing placeholder raises `KeyError`, so a typo fails `tests/test_hubs.py` instead of a live run.
 - `prompts.names()` lists every prompt; `prompts.placeholders(name)` lists the names a prompt needs.
+- `prompts.catalog()` and `GET /api/prompts` show the shipped template text with its role. `$placeholders` are displayed literally; no user's messages, files, memory, tool outputs or provider credentials are returned.
 - Edit a prompt and restart the server (prompts are cached after the first load).
 
 ## Map
@@ -36,7 +37,7 @@ The prompt text. $placeholder is filled by render(); write $$ for a literal doll
 | `thinker/composer` · `composer_retry` | merge the answers; retry the composer only | C14, T9, T10 |
 | `planner/plan_writer` | write or re-write the plan | section 6, C15, C17 |
 | `planner/step` | the task one step gets | section 6 |
-| `planner/assemble` + `form_text` / `form_document` / `form_code` | the final deliverable | step 5 |
+| `planner/assemble` + `form_text` / `form_document` / `form_code` / `form_png` | the final deliverable | step 5 |
 | `memory/facts` | Memory Writer | C39, C41 |
 | `memory/ledger` · `summary` · `summary_redo` · `merge` | checked compaction | Part 2 section 7 |
 | `files/ocr_scan` · `chart` · `card` · `query_rewrite` | attachment pipeline | C25, C27, Part 2 section 5 |

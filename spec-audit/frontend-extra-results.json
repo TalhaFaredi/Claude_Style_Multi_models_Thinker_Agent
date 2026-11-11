@@ -1,0 +1,62 @@
+[
+  {
+    "name": "File reader remains on",
+    "actual": "true",
+    "expected": "true",
+    "pass": true
+  },
+  {
+    "name": "F4: tool-incapable model disabled with only File reader enabled",
+    "actual": false,
+    "expected": true,
+    "pass": false
+  },
+  {
+    "name": "F6: non-thinking model sets thinking Off",
+    "actual": "true",
+    "expected": "true",
+    "pass": true
+  },
+  {
+    "name": "F6: High disabled for non-thinking model",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "F8: over-limit file amber warning",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "F8: over-limit file offers free text-only choice",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "F5: nonvision model disabled after charts attached",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "F12: reset clears Temporary chat",
+    "actual": "true",
+    "expected": "false",
+    "pass": false
+  },
+  {
+    "name": "F12: reset restores Long-term memory",
+    "actual": "false",
+    "expected": "true",
+    "pass": false
+  },
+  {
+    "name": "F13: mixed strength warning shown",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  }
+]

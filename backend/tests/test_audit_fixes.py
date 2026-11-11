@@ -40,6 +40,10 @@ async def test_empty_answer_after_reasoning_is_asked_again_without_reasoning(mon
     assert res.text == "Visible answer"
     assert bodies == [{"effort": "low"}, {"enabled": False}]
     assert meter.calls == 2 and meter.usd == pytest.approx(0.00031)   # both calls are paid and counted
+    # The lesson is kept: the next call at this level goes straight to "no reasoning" instead of paying twice again.
+    await client.complete(info.id, [{"role": "user", "content": "q"}], stage="test", ctx=CallContext(meter=meter),
+                          max_tokens=100, thinking="low", allow_fallback=False)
+    assert bodies[2:] == [{"enabled": False}] and meter.calls == 3
 
 
 async def test_a_nonthinking_empty_answer_is_not_retried(monkeypatch):

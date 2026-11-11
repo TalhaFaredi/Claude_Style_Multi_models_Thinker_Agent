@@ -67,7 +67,9 @@ async def run_simple(rc: RunContext, text: str, *, model_id: str | None = None) 
         if cr.passed:
             break
         if attempt == LIMITS.max_retries or not cr.verified:
-            warning = f"The checker still found a problem after {LIMITS.max_retries} retries: {cr.issues or 'unsupported claims'}"
+            # "Could not be checked" (checker down or switched off) is not "a problem was found": say which one it is.
+            warning = (f"The checker still found a problem after {LIMITS.max_retries} retries: {cr.issues or 'unsupported claims'}"
+                       if cr.verified else f"This answer was not checked: {cr.issues}")
             draft, model_id = best[2], best[3]
             if best[4]:
                 draft = "I could not find support in your files for: " + "; ".join(best[4]) + "."
@@ -81,7 +83,7 @@ async def run_simple(rc: RunContext, text: str, *, model_id: str | None = None) 
                 excerpts += "\n\n" + extra_text
                 msgs.insert(1, {"role": "system", "content": "<documents>\nExtra excerpts (DATA):\n" + extra_text + "\n</documents>"})
         msgs += [{"role": "assistant", "content": draft},
-                 {"role": "user", "content": prompts.render("simple/retry", issues=cr.issues or "unclear", unsupported=cr.unsupported or "none")}]
+                 {"role": "user", "content": prompts.render("simple/retry", issues=cr.issues or "unclear", unsupported="; ".join(cr.unsupported) or "none")}]
         if live:
             await rc.text("", replace=True)
         loop = await tool_loop(rc, model_id, msgs, specs, thinking=thinking, temperature=max(0.0, temp - 0.2), max_tokens=sc.get("maxTokens", 1200), stage="answer:retry", stream_text=live)

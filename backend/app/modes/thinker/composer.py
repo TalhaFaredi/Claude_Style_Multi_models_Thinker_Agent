@@ -7,12 +7,14 @@
 """
 from __future__ import annotations
 
+from dataclasses import replace
+
 from app import llm, memory, prompts
 from app.core.config import LIMITS
 from app.core.costmeter import BudgetExceeded
 from app.core.tokens import estimate_messages
 from app.llm import registry
-from app.modes.thinker.rounds import BOARD_CHARS
+from app.modes.thinker.rounds import excerpt
 from app.modes.thinker.team import Agent
 from app.pipeline import checker
 from app.pipeline.runtime import RunContext
@@ -30,7 +32,7 @@ def sections(agents: list[Agent], debated: bool) -> str:
             continue
         s = f"### {a.role}\nFinal answer:\n{a.answer}"
         if debated and a.first and a.first != a.answer:
-            s += f"\n\nRound-1 answer (before reading the others):\n{a.first[:BOARD_CHARS]}" + (f"\n{a.changed}" if a.changed else "")
+            s += f"\n\nRound-1 answer (before reading the others):\n{excerpt(a.first)}" + (f"\n{a.changed}" if a.changed else "")
         elif debated and a.first:
             s += f"\n(Round-1 answer was the same.{(' ' + a.changed) if a.changed else ''})"
         out.append(s)
@@ -52,7 +54,9 @@ async def compose(rc: RunContext, question: str, agents: list[Agent], debated: b
     draft = ""
     best = None
     for attempt in range(LIMITS.max_retries + 1):
-        res = await llm.complete(model, msgs, stage="thinker:compose", ctx=rc.ctx, temperature=0.4, max_tokens=rc.req["simple"].get("maxTokens", 1200),
+        res = await llm.complete(model, msgs, stage="thinker:compose", ctx=replace(rc.ctx, label="Composer"), temperature=0.4,
+                                 max_tokens=rc.req["simple"].get("maxTokens", 1200),
+                                 thinking="low" if registry.get(model).thinking else "off",
                                  stream=not quiet, on_text=rc.text if live else None, on_reset=lambda: rc.text("", replace=True))
         draft = res.text
         await rc.cost()
@@ -68,7 +72,7 @@ async def compose(rc: RunContext, question: str, agents: list[Agent], debated: b
             answer = best[1] if best else draft
             if cr.unsupported:
                 answer = "I could not find support in the files for: " + "; ".join(cr.unsupported) + "."
-            return answer, f"The checker still found a problem: {cr.issues}"
+            return answer, (f"The checker still found a problem: {cr.issues}" if cr.verified else f"This answer was not checked: {cr.issues}")
         await rc.status(f"Checker: {cr.issues}. Retry {attempt + 1} of {LIMITS.max_retries} (composer only)")
         msgs = msgs + [{"role": "assistant", "content": draft}, {"role": "user", "content": prompts.render("thinker/composer_retry", issues=cr.issues or "unclear")}]
         if excerpts and cr.unsupported:

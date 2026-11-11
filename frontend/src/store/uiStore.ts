@@ -3,6 +3,7 @@ import { create } from "zustand";
 export type DialogId =
   | "setup"
   | "models"
+  | "prompts"
   | "budget"
   | "file"
   | "card"

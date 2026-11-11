@@ -81,7 +81,7 @@ async def run_thinker(rc: RunContext, text: str, *, quiet: bool = False, on_note
                 if await agree(rc, text, agents):   # T7
                     await progress.push(agents, "They agree on the main point")
                     break
-                est = round_cost(agents, built.tokens + 900) + registry.get(agents[0].model).call_cost(3000, 800)
+                est = round_cost(agents, built.tokens + 1600) + registry.get(agents[0].model).call_cost(3000, 800)
                 if rc.meter.usd + est > rc.meter.budget:   # Budget Guard: skip the debate rather than overspend
                     await rc.status("Budget is tight: skipping the remaining debate rounds")
                     break

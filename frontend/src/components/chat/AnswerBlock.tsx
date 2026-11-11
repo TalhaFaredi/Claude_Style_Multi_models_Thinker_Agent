@@ -1,6 +1,5 @@
 "use client";
 
-import { getModel } from "@/data/sample";
 import type { AiMessage } from "@/domain/messages";
 import { useChatStore } from "@/store/chatStore";
 import { AnswerHeader } from "./AnswerHeader";
@@ -13,20 +12,21 @@ import { ToolChip } from "./ToolChip";
 import { PermissionCard } from "./PermissionCard";
 import { ComposerCard } from "./ComposerCard";
 import { Markdown } from "./Markdown";
+import { ModelThinkingSection } from "./ModelThinkingSection";
+import { CallUsageSection } from "./CallUsageSection";
 
 /** One assistant answer. Which blocks appear depends on the mode and what the server has sent so far. */
 export function AnswerBlock({ m }: { m: AiMessage }) {
   const retry = useChatStore((s) => s.retry);
   const live = m.status === "live";
   const paragraphs = m.text ? m.text.split(/\n\n/) : [];
-  const showThinking =
-    m.thinkingNotes.length > 0 &&
-    (m.kind !== "simple" || (m.snapshot.simple.thinking !== "off" && getModel(m.snapshot.simple.model).thinking));
+  const showThinking = m.thinkingNotes.length > 0;
 
   return (
     <article className={`ai${live ? " live" : ""}`} aria-label="Assistant answer">
       <AnswerHeader m={m} />
       {showThinking && <ThinkingSection notes={m.thinkingNotes} live={live && !m.text} simple={m.kind === "simple"} seconds={m.thoughtSeconds} />}
+      {(m.modelThinking?.length ?? 0) > 0 && <ModelThinkingSection entries={m.modelThinking ?? []} />}
       {m.kind === "simple" && m.tool && <ToolChip label={m.tool.label} />}
       {m.kind === "thinker" && <TeamProgress m={m} />}
       {m.composer && <ComposerCard composer={m.composer} />}
@@ -50,6 +50,7 @@ export function AnswerBlock({ m }: { m: AiMessage }) {
         </div>
       )}
       {(m.status === "done" || m.status === "stopped") && <MetaLine m={m} />}
+      {(m.callUsages?.length ?? 0) > 0 && <CallUsageSection entries={m.callUsages ?? []} />}
     </article>
   );
 }

@@ -100,8 +100,12 @@ MAX_IMPORT_BYTES = 200 * 1024 * 1024
 
 # Show the draft while it streams (best UX); the Checker still runs afterwards and can replace it.
 # Set STREAM_BEFORE_CHECK=0 to hold the draft until it passes (strict "nothing before the Checker").
-STREAM_BEFORE_CHECK = env("STREAM_BEFORE_CHECK", default="0") != "0"
+STREAM_BEFORE_CHECK = env("STREAM_BEFORE_CHECK", default="1") != "0"
 CHECK_ANSWERS = env("CHECK_ANSWERS", default="1") != "0"
+
+# Access token for every /api route. Empty = open, which is only safe on 127.0.0.1. Set it before the server is
+# reachable from another machine: anyone who can call the API spends the provider credit and reads the chats.
+APP_TOKEN = env("APP_TOKEN")
 
 CORS_ORIGINS = [o.strip() for o in env("CORS_ORIGINS", default="http://localhost:3000,http://localhost:3123,http://127.0.0.1:3000").split(",") if o.strip()]
 

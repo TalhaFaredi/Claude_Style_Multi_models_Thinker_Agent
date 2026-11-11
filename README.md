@@ -19,6 +19,8 @@ A local AI workspace with **Simple**, **Thinker**, **Planner** and **Auto** mode
 
 Shared features include per-question budgets, usage logs, model capability filtering, permission prompts, document reading, checked outputs, searchable chat history, memory controls and ZIP export/import.
 
+The current design is [specification v3](Multi-Mode_AI_Assistant_Complete_Spec_v3.pdf), including the [model, prompt and cost addendum](spec-audit/SPEC-ADDENDUM.md) and the [v3 flow, safety, memory and file addendum](spec-audit/SPEC-ADDENDUM-v3.md). The original specification and the v2 PDF are also included.
+
 ## Repository branches
 
 | Branch | Contents |
@@ -164,7 +166,9 @@ flowchart TD
 
 The backend owns model calls and execution decisions. The frontend displays typed progress events and sends explicit controls such as plan approval, Stop and tool permission. All modes use the shared cost meter, tools, checker and output builders.
 
-**Cost control.** Calls reserve spending before dispatch. Agents, retries, retrieval and memory work share the approved question cap. Unknown provider usage is recorded as an estimate. Higher agent counts can cost more without improving the answer.
+**Models and prompts.** The model picker lists the complete loaded OpenRouter catalog plus configured NVIDIA entries, with search, provider, capabilities and availability reasons. A prompt viewer shows the shipped system and agent-role templates, including each Thinker role, Planner, router and Checker. The templates contain literal placeholders; private runtime messages and documents are not included.
+
+**Thinking and cost.** Provider-exposed reasoning notes appear with the model and agent/stage that produced them. Models that do not supply notes show that state without invented reasoning. Calls reserve spending before dispatch; agents, retries, retrieval and memory work share the approved question cap. After each model call, the UI shows its recorded tokens and USD, with estimated charges marked. The model picker also shows tentative **single-call** ranges for small (1k-5k tokens), medium (5k-50k) and high (50k-500k) tasks using 70% input and 30% output; these omit reasoning, tools, retries and other calls. The question-specific estimate and approved cap govern the run.
 
 **Files.** Fingerprints and reader/version caches reuse saved readings. Direct text extraction is local; paid OCR/vision reading shows its estimate and approved maximum first. Readers support PDFs, images and Office files, with tables, chart descriptions and page citations.
 
@@ -242,6 +246,7 @@ For the old flat-module names, model access now lives in `backend/app/llm/`, dat
 | `GET /health` | Service health |
 | `GET /api/config` | Defaults and available capabilities |
 | `GET /api/models` | Model registry, capabilities, prices and availability |
+| `GET /api/prompts` | Reviewable static prompt templates and their role labels |
 | `POST /api/estimate` | Estimate a proposed run |
 | `POST /api/runs` | Start a run and stream SSE events |
 | `POST /api/runs/{id}/approve` | Approve the displayed plan version |

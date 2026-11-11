@@ -42,3 +42,34 @@ def names() -> list[str]:
 def placeholders(name: str) -> set[str]:
     return {m.group("named") or m.group("braced") for m in _template(name).pattern.finditer(_template(name).template)
             if m.group("named") or m.group("braced")}
+
+
+_TITLES = {
+    "shared/system_rules": "Shared answer rules",
+    "shared/documents_header": "Document context rules",
+    "router/route": "Mode router",
+    "checker/check": "Answer checker",
+    "thinker/agent": "Thinker agent instructions",
+    "thinker/composer": "Thinker composer",
+    "thinker/judge": "Debate agreement judge",
+    "planner/plan_writer": "Planner plan writer",
+    "planner/step": "Planner step task",
+}
+_USER_TEMPLATES = {"simple/retry", "thinker/board", "thinker/composer", "thinker/composer_retry", "planner/step"}
+
+
+def catalog() -> list[dict[str, str]]:
+    """Reviewable shipped templates only. Never render or return user/file/tool/runtime content."""
+    out: list[dict[str, str]] = []
+    for name in names():
+        if name == "gateway/refusal":
+            role = "response template"
+        elif name in _USER_TEMPLATES:
+            role = "user follow-up"
+        elif name.startswith("thinker/roles/") or name.startswith("planner/form_") or name in {"shared/documents_header", "skills/header", "thinker/agent"}:
+            role = "system fragment"
+        else:
+            role = "system"
+        title = _TITLES.get(name) or name.replace("/", " / ").replace("_", " ").title()
+        out.append({"id": name, "title": title, "role": role, "content": _template(name).template})
+    return out

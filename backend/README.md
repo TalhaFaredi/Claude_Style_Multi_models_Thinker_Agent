@@ -2,7 +2,7 @@
 
 FastAPI implements the PDF's five-stage pipeline: Input Gateway, Mode Router, Simple/Thinker/Planner, Checker and Output Builder. Shared services provide model metadata, tools, archive/memory, attachment readers, costs and usage logs.
 
-The current requirement matrix and measured results are in [spec-audit/IMPLEMENTATION.md](../spec-audit/IMPLEMENTATION.md). The earlier audit is historical; its defects should not be treated as the current feature list.
+The current design update is the [v2 specification PDF](../Multi-Mode_AI_Assistant_Complete_Spec_v2.pdf) and its [addendum](../spec-audit/SPEC-ADDENDUM.md). The prior verification matrix is in [spec-audit/IMPLEMENTATION.md](../spec-audit/IMPLEMENTATION.md); its measurements predate the v2 model/cost display changes.
 
 ## Start
 
@@ -17,6 +17,10 @@ Keep provider keys in the root `.env`, or process environment variables. Names a
 
 OpenRouter's live registry supplies prices and capabilities. NVIDIA metadata is entered explicitly. Unknown prices are unavailable rather than assumed free: configure `NVIDIA_INPUT_USD_PER_MILLION` and `NVIDIA_OUTPUT_USD_PER_MILLION` to the rates for your account. Provider health checks use read-only endpoints and do not run test inference.
 
+`GET /api/models` returns the full loaded catalog. Each model includes tentative small (1k-5k), medium (5k-50k) and high (50k-500k) token price ranges under a 70% input/30% output single-call assumption. Unknown prices and context-incompatible bands are marked unavailable. These bands are distinct from the question-specific budget estimate and actual post-call usage.
+
+`GET /api/prompts` returns shipped Markdown templates with role labels and literal placeholders, including the shared system rules and every Thinker role. It never renders or returns a user's prompt, documents, memory or tool output. During a run, `model_thinking` events carry only provider-exposed reasoning notes, and `call_usage` events carry per-call model/stage/agent labels, tokens, USD and an estimated flag. A provider or model may return no reasoning notes.
+
 Useful configuration:
 
 | Setting | Purpose |
@@ -28,7 +32,8 @@ Useful configuration:
 | `EMBED_INPUT_USD_PER_MILLION` | Required explicit input rate when selecting a different embedding model |
 | `WINDOW_CAP_TOKENS` | Initial working-window cap, also configurable in Settings |
 | `RUN_TIMEOUT_S`, `PLANNER_TIMEOUT_S`, `CALL_TIMEOUT_S` | Overall Simple/Thinker, Planner and individual provider timeouts |
-| `STREAM_BEFORE_CHECK` | Defaults to `0`: hold drafts until checked, then stream the selected answer |
+| `STREAM_BEFORE_CHECK` | Defaults to `1`: the draft streams while it is written and the Checker can still replace it. `0` holds the draft until it is checked |
+| `APP_TOKEN` | Empty by default (open, only safe on `127.0.0.1`). When set, every `/api` route needs `Authorization: Bearer <token>`; the web app asks for it once. Set it before the server is reachable from another machine |
 | `CHECK_ANSWERS` | Defaults on; disabling it marks answers unverified rather than silently passing them |
 | `CODE_SANDBOX_IMAGE` | Installed Docker image for code execution; defaults to `python:3.12-alpine` |
 | `CORS_ORIGINS` | Allowed frontend origins |
@@ -87,6 +92,7 @@ The server checks both the daemon and installed image. If Docker is absent, code
 | `GET /api/chats/{id}/export` | `includeFiles` query; optional `X-Export-Password` header |
 | `POST /api/import` | ZIP multipart file, optional `password` field; checksums validated first |
 | `GET /api/usage` | Model/stage totals, estimated usage, reading spend and 80% alarm |
+| `GET /api/prompts` | Versioned static system/agent/step templates for review |
 
 See `/docs` for all chat, settings, memory, model, artifact and rating routes.
 

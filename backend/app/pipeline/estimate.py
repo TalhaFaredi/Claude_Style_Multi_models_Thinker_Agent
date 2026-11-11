@@ -76,8 +76,9 @@ async def estimate(req: dict, chat_id: str | None) -> dict:
         if rounds > 1:
             parts["judge"] = call_cost(config.UTILITY_MODEL, 1200, 60) * (rounds - 1)
             calls += rounds - 1
-        comp = team.get("composer", "auto")
-        parts["composer"] = call_cost(composer_model(team, model), 700 * n + used + prompt_tokens, max_tokens)
+        comp = composer_model(team, model)
+        parts["composer"] = call_cost(comp, 700 * n + used + prompt_tokens, max_tokens,
+                                       "low" if registry.get(comp).thinking else "off")
         parts["checker"] = checker_cost()
         calls += 2
     else:   # planner: a typical 4-step plan
@@ -90,9 +91,9 @@ async def estimate(req: dict, chat_id: str | None) -> dict:
         if hard:
             n, rounds = team_size(team)
             ids = [team.get("model", model)] * n if team.get("source", "same") == "same" else team.get("mixed", [])
-            comp = team.get("composer", "auto")
             comp = composer_model(team, model)
-            parts["team steps"] = hard * (sum(call_cost(mid, 2000, 700, "low" if registry.get(mid).thinking else "off") for mid in ids) * rounds + call_cost(comp, 2500, max_tokens) + checker_cost())
+            parts["team steps"] = hard * (sum(call_cost(mid, 2000, 700, "low" if registry.get(mid).thinking else "off") for mid in ids) * rounds
+                                           + call_cost(comp, 2500, max_tokens, "low" if registry.get(comp).thinking else "off") + checker_cost())
             calls += hard * (n * rounds + 2)
         parts["output"] = call_cost(model, 3000, max(2500, max_tokens)) + checker_cost()
         calls += 2

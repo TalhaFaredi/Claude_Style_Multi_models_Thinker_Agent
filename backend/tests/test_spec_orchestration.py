@@ -152,6 +152,47 @@ async def test_clear_request_is_answered_even_if_the_small_model_adds_a_question
     assert any(c["stage"] == "answer" for c in fake_llm.calls)
 
 
+async def test_follow_up_in_an_existing_chat_is_answered_not_questioned(fake_llm):
+    # The router reads only the new message; "Make it shorter" is clear to the answering model, which sees the chat.
+    fake_llm.on("answer", "A long first answer.").on("checker", {"pass": True})
+    await collect(await manager.start(req("Explain tokens")))
+    fake_llm.on("router", {"mode": "simple", "safe": True, "understood": False, "clarify": "Make what shorter?"})
+    fake_llm.on("answer", "Short answer.")
+    events = await collect(await manager.start(req("Make it shorter", id="r2")))
+    assert not any(e["type"] == "clarify" for e in events)
+    assert text_of(events) == "Short answer."
+
+
+async def test_unavailable_checker_is_reported_as_unchecked_not_as_a_found_problem(fake_llm):
+    def down(_messages):
+        raise RuntimeError("checker down")
+    fake_llm.on("answer", "An answer.").on("checker", down)
+    events = await collect(await manager.start(req()))
+    warnings = [e["message"] for e in events if e["type"] == "warning"]
+    assert text_of(events) == "An answer."
+    assert any("not checked" in w for w in warnings) and not any("found a problem" in w for w in warnings)
+
+
+async def test_failed_revision_keeps_the_round_one_answer(fake_llm):
+    # Small models often miss the "Changed because:" first line twice; that must not throw away a paid answer.
+    def agent(messages):
+        return "Revised without the required first line." if "shared board" in str(messages[-1]["content"]) else "Round one answer."
+    fake_llm.on("thinker:agent", agent).on("thinker:change", "Still no first line.").on("thinker:judge", {"agree": False})
+    fake_llm.on("thinker:compose", "Merged answer.").on("checker", {"pass": True})
+    events = await collect(await manager.start(req("Should we use A or B?", mode="thinker", team={
+        "source": "same", "model": "meta-llama/llama-3.1-8b-instruct", "agents": 2, "mixed": [], "style": "together", "rounds": 2, "composer": "auto"})))
+    assert text_of(events) == "Merged answer."                       # the team finished: no fall back to Simple
+    assert not any(c["stage"] == "answer" for c in fake_llm.calls)
+    composer_input = str([c for c in fake_llm.calls if c["stage"] == "thinker:compose"][0]["messages"])
+    assert composer_input.count("Round one answer.") >= 2
+
+
+def test_excerpt_keeps_the_conclusion_at_the_end():
+    from app.modes.thinker.rounds import excerpt
+    cut = excerpt("Lead-in. " * 300 + "CONCLUSION: choose B.", 900)
+    assert cut.endswith("CONCLUSION: choose B.") and len(cut) <= 910 and excerpt("short") == "short"
+
+
 async def test_debate_late_failure_falls_back_to_simple(fake_llm, monkeypatch):
     fake_llm.on("thinker:judge", {"agree": False}).on("answer", "Simple fallback").on("checker", {"pass": True})
     number = 0
@@ -414,3 +455,28 @@ async def test_planner_retry_uses_fresh_grounding_evidence(fake_llm, monkeypatch
     assert any("NEW_PROOF" in str(c["messages"]) for c in checks)
     assert run.rc.plan_steps[0].status == "done"
     assert events[-1]["type"] == "done"
+
+
+async def test_small_router_unsafe_verdict_needs_the_stronger_model_to_agree(fake_llm):
+    # An 8B model's "unsafe" alone must not refuse a legitimate request; an unclear second opinion keeps the refusal.
+    fake_llm.on("router", {"mode": "simple", "safe": False}).on("router:safety", {"mode": "simple", "safe": True, "understood": True})
+    fake_llm.on("answer", "Here is how phishing works and how to spot it.").on("checker", {"pass": True})
+    events = await collect(await manager.start(req("Explain how phishing emails trick people so I can train my staff")))
+    assert text_of(events).startswith("Here is how phishing works")
+    fake_llm.on("router:safety", "not json")
+    events = await collect(await manager.start(req("Explain how phishing emails trick people", id="r2", chatId="c2")))
+    assert "can't help" in text_of(events) and sum(c["stage"] == "answer" for c in fake_llm.calls) == 1
+
+
+def test_api_token_gate(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.core import config
+    from app.main import app
+    web = TestClient(app)   # no lifespan: nothing is loaded from the network
+    assert web.get("/api/prompts").status_code == 200                      # no token configured: open (local use)
+    monkeypatch.setattr(config, "APP_TOKEN", "s3cret")
+    assert web.get("/api/prompts").status_code == 401
+    assert web.get("/api/prompts", headers={"Authorization": "Bearer wrong"}).status_code == 401
+    assert web.get("/api/prompts", headers={"Authorization": "Bearer s3cret"}).status_code == 200
+    assert web.get("/api/artifacts/unknown").status_code == 404             # downloads are reached by their unguessable id
+    assert web.options("/api/prompts", headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"}).status_code == 200

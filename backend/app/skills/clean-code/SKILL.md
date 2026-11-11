@@ -1,7 +1,8 @@
 ---
 name: clean-code
 description: Write small, readable, working code with the edge cases handled.
-triggers: [write a function, write a script, code, script, function, python, javascript, typescript, sql, regex, api, class]
+triggers: [write a function, write a script, write code, code that, code to, code, script, python, javascript, typescript, sql, regex, api]
+hints: [function, class, method, loop]
 modes: [simple, thinker, planner]
 formats: [code]
 source: written for this app

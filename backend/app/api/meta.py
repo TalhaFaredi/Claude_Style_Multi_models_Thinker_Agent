@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
-from app import files, memory, skills, tools
+from app import files, memory, prompts, skills, tools
 from app.api.common import defaults
 from app.api.schemas import EstimateRequest
 from app.core import db, usage
@@ -42,7 +42,14 @@ async def get_config():
 
 @router.get("/api/models")
 async def list_models(q: str = "", all: bool = False, provider: str = ""):
-    return [m.to_api() for m in registry.list(q[:100], include_all=all or bool(q), provider=provider)]
+    # The full catalog is the default. Keep `all` accepted for older clients.
+    return [m.to_api() for m in registry.list(q[:100], include_all=True, provider=provider)]
+
+
+@router.get("/api/prompts")
+async def list_prompts():
+    """Static shipped templates for review; never the rendered messages of a private run."""
+    return {"version": APP_VERSION, "templates": prompts.catalog()}
 
 
 @router.post("/api/providers/refresh")

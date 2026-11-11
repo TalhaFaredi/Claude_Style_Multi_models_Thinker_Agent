@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from dataclasses import replace
 
 from app import llm, prompts
 from app.core import config
@@ -22,25 +23,36 @@ BOARD_CHARS = 1200   # the board keeps only each agent's latest short answer, so
 AGENT_MAX_TOKENS = 700
 
 
+def excerpt(answer: str, limit: int = BOARD_CHARS) -> str:
+    """A long answer cut to `limit` characters, keeping its start AND its end. Every role is told to finish with
+    its own best answer, so a head-only cut showed the judge and the board the lead-in, not the conclusion."""
+    if len(answer) <= limit:
+        return answer
+    head = limit // 3
+    return f"{answer[:head]}\n[...]\n{answer[-(limit - head):]}"
+
+
 def _messages_for(base: list[dict], agent: Agent, extra_system: str, board: str | None) -> list[dict]:
     msgs = [dict(m) for m in base]
     msgs[0] = {"role": "system", "content": msgs[0]["content"] + "\n\n" + prompts.render("thinker/agent", role=agent.role_prompt())}
     if extra_system:   # T4: facts gathered once for the whole team
         msgs.insert(1, {"role": "system", "content": extra_system})
     if board:
-        last = msgs[-1]
-        content = last["content"] if isinstance(last["content"], str) else last["content"][0]["text"]
-        msgs[-1] = {"role": "user", "content": f"{content}\n\n{board}"}
+        # A revising agent is asked whether (and why) it changed, so it must see its own earlier answer. It used
+        # to get only the others' answers glued to the question, which also dropped any attached images.
+        msgs += [{"role": "assistant", "content": agent.answer or "(no earlier answer)"}, {"role": "user", "content": board}]
     return msgs
 
 
 async def _agent_answer(rc: RunContext, agent: Agent, base: list[dict], extra: str, board: str | None, same: bool, team_models: set[str]) -> str:
     original_model = agent.model
     messages = _messages_for(base, agent, extra, board)
-    # Agents answer without hidden reasoning: their diversity comes from roles and temperatures, and on cheap
-    # thinking models reasoning used the whole allowance and left an empty answer (measured with qwen3.7-flash).
-    res = await llm.complete(agent.model, messages, stage="thinker:agent", ctx=rc.ctx, temperature=agent.temp,
-                             max_tokens=AGENT_MAX_TOKENS, thinking="off", allow_fallback=not same, exclude=team_models)
+    # A capable model gets a bounded low reasoning allowance. The client reserves those tokens separately
+    # from AGENT_MAX_TOKENS, so the agent still has room for a visible answer.
+    thinking = "low" if registry.get(agent.model).thinking else "off"
+    agent_ctx = replace(rc.ctx, label=agent.role)
+    res = await llm.complete(agent.model, messages, stage="thinker:agent", ctx=agent_ctx, temperature=agent.temp,
+                             max_tokens=AGENT_MAX_TOKENS, thinking=thinking, allow_fallback=not same, exclude=team_models)
     if not res.text.strip():
         raise ValueError("The agent returned an empty answer")   # T6: counts as a failed agent, visibly
     if not same:
@@ -49,12 +61,15 @@ async def _agent_answer(rc: RunContext, agent: Agent, base: list[dict], extra: s
         team_models.add(res.model)
         agent.model = res.model   # T6: a different model stood in for a failed one
     answer = res.text.strip()
+    if board and re.fullmatch(r"unchanged\.?", answer, re.I):
+        return agent.answer   # "Unchanged" alone: the earlier answer stands, with no extra paid call
     if board and answer != agent.answer:
         change, _ = split_change(answer)
         if not change:
             messages += [{"role": "assistant", "content": answer}, {"role": "user", "content": "Explain the change compared with your previous answer. Begin with 'Changed because: ...' or 'Unchanged', then a blank line and your complete answer."}]
-            amended = await llm.complete(agent.model, messages, stage="thinker:change", ctx=rc.ctx, temperature=0.2,
-                                         max_tokens=AGENT_MAX_TOKENS, allow_fallback=not same, exclude=team_models)
+            amended = await llm.complete(agent.model, messages, stage="thinker:change", ctx=agent_ctx, temperature=0.2,
+                                         max_tokens=AGENT_MAX_TOKENS, thinking="low" if registry.get(agent.model).thinking else "off",
+                                         allow_fallback=not same, exclude=team_models)
             if not split_change(amended.text)[0]:
                 raise ValueError("Revised answer did not explain its change")
             answer = amended.text.strip()
@@ -80,7 +95,10 @@ async def run_round(rc: RunContext, progress: Progress, agents: list[Agent], bas
         except BudgetExceeded:
             raise
         except Exception:   # failed after retries and fallbacks: drop this agent (T6)
-            a.alive = False
+            if revising and a.answer:
+                a.status = "ready"   # a failed revision keeps the answer already paid for, as "unchanged"
+            else:
+                a.alive = False
         finally:
             await progress.push(agents, label)
             await rc.cost()
@@ -93,7 +111,7 @@ async def run_round(rc: RunContext, progress: Progress, agents: list[Agent], bas
 
 
 def board_for(agents: list[Agent], me: int) -> str:
-    lines = [f"[{a.role}] {a.answer[:BOARD_CHARS]}" for i, a in enumerate(agents) if a.alive and i != me and a.answer]
+    lines = [f"[{a.role}] {excerpt(a.answer)}" for i, a in enumerate(agents) if a.alive and i != me and a.answer]
     return prompts.render("thinker/board", board="\n\n".join(lines))
 
 
@@ -105,10 +123,11 @@ def split_change(text: str) -> tuple[str, str]:
 
 async def agree(rc: RunContext, question: str, agents: list[Agent]) -> bool:
     """The judge: do all answers reach the same main conclusion?"""
-    joined = "\n\n".join(f"[{a.role}] {a.answer[:700]}" for a in agents if a.alive and a.answer)
+    joined = "\n\n".join(f"[{a.role}] {excerpt(a.answer, 900)}" for a in agents if a.alive and a.answer)
     try:
+        # 40 tokens: a cut-off {"agree":true} cannot be read, counts as "disagree" and buys a whole extra round.
         data, _ = await llm.ask_json(config.UTILITY_MODEL, prompts.render("thinker/judge"), f"QUESTION: {question[:400]}\n\n{joined}",
-                                     stage="thinker:judge", ctx=rc.ctx, max_tokens=20)
+                                     stage="thinker:judge", ctx=rc.ctx, max_tokens=40)
         return bool(isinstance(data, dict) and data.get("agree"))
     except BudgetExceeded:
         raise

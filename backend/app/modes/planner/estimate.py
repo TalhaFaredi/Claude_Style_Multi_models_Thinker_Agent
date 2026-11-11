@@ -23,7 +23,8 @@ def estimate_plan(steps: list[Step], req: dict) -> float:
             composer = team.get("composer", "auto")
             if composer == "auto":
                 composer = composer_model(team, model, total / 2)
-            total += call_cost(composer, 2500 + 700 * n, req["simple"].get("maxTokens", 1200))
+            total += call_cost(composer, 2500 + 700 * n, req["simple"].get("maxTokens", 1200),
+                               "low" if registry.get(composer).thinking else "off")
             total += call_cost(model, 1200, 80) * max(0, rounds - 1)
         else:
             total += call_cost(model, 1800 + (1500 if s.tools else 0), req["simple"].get("maxTokens", 1200), req["simple"].get("thinking", "off"))
