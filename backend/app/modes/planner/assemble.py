@@ -15,7 +15,7 @@ def _form(fmt: str) -> str:
     if fmt.startswith("code:"):
         return prompts.render("planner/form_code")
     if fmt == "png":
-        return 'Return only safe diagram JSON: {"width":1200,"height":800,"background":"white","elements":[{"type":"text","x":40,"y":40,"text":"Title","fill":"black","size":30}]}. Elements may be text, rect, ellipse or line. Match all requested factual content and layout. No executable code.'
+        return prompts.render("planner/form_png")
     return prompts.render("planner/form_text" if fmt == "text" else "planner/form_document")
 
 
@@ -69,7 +69,7 @@ async def assemble(rc: RunContext, goal: str, steps: list[Step], meta: dict, sou
             doc = best[1]
             warning = f"The final deliverable could not pass all checks: {cr.issues}"
             break
-        messages += [{"role": "assistant", "content": doc}, {"role": "user", "content": f"Correct the final deliverable: {cr.issues}. Unsupported claims: {cr.unsupported}. Return the complete corrected deliverable."}]
+        messages += [{"role": "assistant", "content": doc}, {"role": "user", "content": f"Correct the final deliverable: {cr.issues}. Unsupported claims: {'; '.join(cr.unsupported) or 'none'}. Return the complete corrected deliverable."}]
     if fmt == "text":
         for i in range(0, len(doc), 40):
             await rc.text(doc[i:i + 40])

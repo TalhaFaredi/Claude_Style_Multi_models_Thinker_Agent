@@ -40,6 +40,11 @@ async def update_turn_ledger(chat_id: str, user_text: str, ctx) -> int:
     """Small per-turn edits, including temporary chats; durable memory remains separately optional."""
     from app import llm, prompts
     from app.core import config
+    fact = re.compile(r"\b(my|our|remember|must|never|always|budget|deadline|goal|decided|prefer|name)\b", re.I)
+    # Cheap gate: a plain question ("who won in 2012?") states no goal, rule or figure of the user's, so it gets no
+    # model call and no ledger line. Whatever it holds is still saved when the turn is later summarized.
+    if not (fact.search(user_text) or len(user_text) > 240):
+        return 0
     row = db.one("SELECT MAX(seq) AS n FROM messages WHERE chat_id=? AND role='user'", (chat_id,))
     seq = row["n"] if row else None
     listing = "\n".join(f"[{x['num']}] ({x['kind']}) {x['text']}" for x in ledger_items(chat_id))
@@ -53,8 +58,9 @@ async def update_turn_ledger(chat_id: str, user_text: str, ctx) -> int:
     except Exception:
         pass
     # A failed writer never causes silent omission of an explicitly supplied rule/goal/fact.
-    fact = re.compile(r"\b(my|our|remember|must|never|always|budget|deadline|goal|decided|prefer|name)\b", re.I)
+    # Statements only: "What is my best option?" is a question to answer, not a decision to remember.
     known = {x["text"] for x in ledger_items(chat_id)}
     ops = [{"op": "add", "type": "decision", "text": s.strip(), "src": seq}
-           for s in re.split(r"(?<=[.!?])\s+|\n", user_text) if fact.search(s) and s.strip() not in known]
+           for s in re.split(r"(?<=[.!?])\s+|\n", user_text)
+           if fact.search(s) and not s.strip().endswith("?") and s.strip() not in known]
     return ledger_apply(chat_id, ops, seq)

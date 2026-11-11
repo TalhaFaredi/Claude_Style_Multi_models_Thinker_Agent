@@ -1,0 +1,21 @@
+Observed browser smoke summary, 2026-11-09 client date.
+
+Command: node frontend/e2e/smoke.mjs
+E2E_URL=http://127.0.0.1:3137
+E2E_SHOTS=D:/projects IUB/Multi-Agent APP/spec-audit/frontend-shots
+Browser: installed Microsoft Edge, headless.
+Server: production Next.js isolated demo copy, font loader removed only.
+
+49 check() assertions: PASS.
+console/page errors: none.
+ALL GOOD.
+Process exit: 0.
+
+This tests scripted demo results. No backend, live providers, live paid
+reading, factual quality, real memory recall or real export/import was
+validated by this smoke run. The exact source production build was
+separately blocked by Google font downloads; see frontend-build-results.txt.
+
+Additional assertions: frontend-extra-results.json (7 passed, 3 failed).
+F8 extra check used synthetic persisted $0.05 ask threshold because demo
+fixtures all cost less than the UI's minimum $0.10 ask threshold.

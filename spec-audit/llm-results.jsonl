@@ -1,0 +1,7 @@
+﻿{"case": "parallel_budget", "budget": 0.1, "spent": 0.2, "calls": 2}
+{"case": "reasoning_budget", "budget": 0.1, "spent": 4.196, "requested_visible_tokens": 100, "provider_max_tokens": 4196}
+{"case": "retry_stream", "returned_text": "Correct answer.", "visible_text": "PARTIAL BAD DRAFT. Correct answer.", "attempts": 2}
+{"case": "provider_credentials_fallback", "available_fallback": "nim:audit/fallback", "actually_tried": ["audit/model"]}
+{"case": "truncated_stream", "text": "partial", "finish": "", "logged_cost": 0.0, "prompt_tokens": 0, "completion_tokens": 0}
+{"case": "disabled_tool", "advertised_tool_names": [], "executed_web_calls": [{"query": "private text"}]}
+{"case": "housekeeping_cost", "displayed_cost": 0.01, "saved_message_cost": 0.01, "actual_meter_total_after_memory": 0.03}

@@ -146,6 +146,19 @@ def embedded_images(name: str, data: bytes, page_no: int) -> list[bytes]:
     return []
 
 
+def decode_text(data: bytes) -> str:
+    """Text and CSV files saved on Windows are often UTF-16 or Windows-1252, not UTF-8. Decoding those as UTF-8
+    turned every accented letter into a replacement mark and the page was then treated as an unreadable scan."""
+    if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return data.decode("utf-16", "replace")
+    if b"\x00" in data:   # real binary under a text extension: keep the marks so the page is flagged
+        return data.decode("utf-8", "replace")
+    try:
+        return data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return data.decode("cp1252", "replace")
+
+
 def extract_text_pages(name: str, data: bytes) -> list[tuple[str, int]]:
     ext = Path(name).suffix.lower()
     if ext == ".pdf":
@@ -157,7 +170,7 @@ def extract_text_pages(name: str, data: bytes) -> list[tuple[str, int]]:
     if ext in (".xlsx", ".xlsm"):
         return _xlsx_pages(data)
     if ext in TEXT_EXT:
-        return [(t, 0) for t in _split_pages(data.decode("utf-8", "replace"))]
+        return [(t, 0) for t in _split_pages(decode_text(data))]
     if ext in IMAGE_EXT:
         return [("", 1)]
     raise FileError(f"Unsupported file type {ext or '(none)'}", 415)

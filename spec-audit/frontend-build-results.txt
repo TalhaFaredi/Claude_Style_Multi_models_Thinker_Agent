@@ -1,0 +1,24 @@
+Observed validation log excerpts, 2026-11-09 client date.
+
+Exact source, isolated source copy with original layout.tsx:
+Command: node frontend/node_modules/next/dist/bin/next build spec-audit/frontend-check --webpack
+Next.js 16.4.5 (webpack)
+Native @next/swc-win32-x64-msvc blocked by Windows Application Control.
+WASM fallback: @next/swc-wasm-nodejs.
+connect EACCES 142.250.23.95:443 (retries exhausted)
+src/app/layout.tsx: next/font error: Failed to fetch Inter from Google Fonts.
+src/app/layout.tsx: next/font error: Failed to fetch Source Serif 4 from Google Fonts.
+Build failed because of webpack errors. Exit 1.
+
+Functional audit copy only:
+Removed next/font/google import, Inter/Source_Serif_4 initializer constants,
+and generated font-variable className from copied layout.tsx.
+Same build command: compiled successfully; TypeScript finished; generated
+all 4 static pages; final route table contained /, /_not-found and /icon.svg.
+Exit 0. This does not establish an exact-source build pass.
+
+Original frontend source:
+node node_modules/vitest/vitest.mjs run -> 2 test files, 24 tests passed, exit 0.
+node node_modules/typescript/bin/tsc --noEmit -> no errors, exit 0.
+
+No source changes were made in frontend/ or backend/.

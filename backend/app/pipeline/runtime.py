@@ -58,6 +58,10 @@ def apply_event(v: dict, e: dict) -> None:
         v["status"] = "live" if e.get("resolved") else "waiting"
     elif t == "cost":
         v["calls"], v["costUsd"] = e["calls"], e["usd"]
+    elif t == "call_usage":
+        v.setdefault("meta", {}).setdefault("callUsages", []).append({k: value for k, value in e.items() if k != "type"})
+    elif t == "model_thinking":
+        v.setdefault("meta", {}).setdefault("modelThinking", []).append({k: value for k, value in e.items() if k != "type"})
     elif t == "warning":
         v["warning"] = e["message"]
     elif t == "done":
@@ -150,7 +154,7 @@ class RunContext:
 
     async def emit(self, event: dict[str, Any]) -> None:
         apply_event(self.view, event)
-        if event["type"] in {"plan", "permission", "output", "agents"}:
+        if event["type"] in {"plan", "permission", "output", "agents", "call_usage", "model_thinking"}:
             self.checkpoint()
         await self.queue.put(event)
 

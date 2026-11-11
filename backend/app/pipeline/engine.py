@@ -57,7 +57,8 @@ class RunManager:
         holder: dict[str, RunContext] = {}
         ctx = CallContext(meter=meter, chat_id=req["chatId"], run_id=req["id"],
                           on_switch=lambda a, b: holder["rc"].status(f"{registry.get(a).name} failed, switching to {registry.get(b).name}"),
-                          on_notice=lambda message: holder["rc"].status(message))
+                          on_notice=lambda message: holder["rc"].status(message),
+                          on_event=lambda event: holder["rc"].emit(event))
         rc = RunContext(run_id=req["id"], chat_id=req["chatId"], req=req, meter=meter, settings=memory.get_settings(), queue=asyncio.Queue(),
                         view=view, deadline=time.monotonic() + timeout, ctx=ctx, house=meter)
         holder["rc"] = rc
@@ -100,7 +101,7 @@ manager = RunManager()
 
 
 def house_ctx(rc: RunContext) -> CallContext:
-    return CallContext(meter=rc.house, chat_id=rc.chat_id, run_id=rc.run_id)
+    return CallContext(meter=rc.house, chat_id=rc.chat_id, run_id=rc.run_id, on_event=rc.ctx.on_event)
 
 
 async def context_event(rc: RunContext, model_id: str) -> dict:
@@ -150,7 +151,9 @@ async def pipeline(rc: RunContext, text: str, model_id: str) -> Result:
             await rc.emit({"type": "context", **m})
             return Result("The chat is almost full. Summarize it, start a new chat with summary, or download it before continuing.", warning="Automatic summarizing is off; no new answer was requested.", partial=True)
 
-    r = await router.route(text, req["mode"], has_history=m["usedTokens"] > 1500, has_files=bool(files.chat_readings(rc.chat_id)), ctx=rc.ctx)
+    # Any earlier answer makes this a follow-up, however short the chat is (a token threshold missed young chats).
+    has_history = bool(db.one("SELECT 1 FROM messages WHERE chat_id=? AND role='assistant' AND content<>'' LIMIT 1", (rc.chat_id,)))
+    r = await router.route(text, req["mode"], has_history=has_history, has_files=bool(files.chat_readings(rc.chat_id)), ctx=rc.ctx)
     await rc.emit({"type": "route", "kind": r.kind, "reason": r.reason if req["mode"] == "auto" else ""})
     if r.refusal:
         req["refused"] = True

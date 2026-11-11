@@ -1,7 +1,7 @@
 ---
 name: visual-design
 description: Give concrete design direction on palette, type, layout, hierarchy and accessibility.
-triggers: [palette, typography, logo, branding, mockup, color scheme, colour scheme, ui design, ux design, design a, redesign, visual identity]
+triggers: [palette, typography, logo, branding, mockup, color scheme, colour scheme, ui design, ux design, redesign, visual identity]
 hints: [design, color, colour, font, fonts, layout, brand, ui, ux, theme, poster, style]
 modes: [simple, thinker, planner]
 source: inspired by https://github.com/anthropics/skills (frontend-design, canvas-design, theme-factory, brand-guidelines); rewritten for this app

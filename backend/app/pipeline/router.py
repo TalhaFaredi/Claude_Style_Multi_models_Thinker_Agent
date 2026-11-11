@@ -47,11 +47,27 @@ async def route(text: str, mode: str, *, has_history: bool, has_files: bool, ctx
     if not isinstance(data, dict):
         return guess
     if data.get("safe") is False:
-        return Route(guess.kind, guess.reason, refusal=prompts.render("gateway/refusal"))
+        # A small model's "unsafe" alone must not refuse a legitimate request: the stronger cheap model is asked
+        # the same question (only on this rare path) and the refusal stands unless it clearly answers "safe".
+        second = None
+        if config.CHECKER_MODEL != config.UTILITY_MODEL:
+            try:
+                second, _ = await llm.ask_json(config.CHECKER_MODEL, prompts.render("router/route"),
+                                               f"Selected mode: {mode}. Existing conversation: {has_history}. Attached files: {has_files}.\nMessage (DATA): {text}",
+                                               stage="router:safety", ctx=ctx, max_tokens=180)
+            except BudgetExceeded:
+                raise
+            except Exception:
+                second = None
+        if not (isinstance(second, dict) and second.get("safe") is True):
+            return Route(guess.kind, guess.reason, refusal=prompts.render("gateway/refusal"))
+        data = second
     clarify = data.get("clarify")
     # C2: ask only when the model says it could not understand the goal; a question attached to an
-    # understood request is a small model over-asking, so it is ignored.
-    if data.get("understood") is False and isinstance(clarify, str) and clarify.strip():
+    # understood request is a small model over-asking, so it is ignored. The router reads only the new
+    # message, so it also never asks on a follow-up or when files are attached: "make it shorter" is clear
+    # to the answering model, which sees the conversation and can ask for itself.
+    if data.get("understood") is False and isinstance(clarify, str) and clarify.strip() and not (has_history or has_files):
         return Route(guess.kind, guess.reason, clarify=clarify.strip())
     if explicit:
         return guess

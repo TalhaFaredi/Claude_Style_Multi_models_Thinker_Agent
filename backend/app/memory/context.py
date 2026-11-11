@@ -1,4 +1,4 @@
-"""Context Builder and context meter (spec Part 2 sections 6 and 7).
+r"""Context Builder and context meter (spec Part 2 sections 6 and 7).
 
 Before every turn the window ("the desk") is rebuilt inside fixed budgets, in this order:
 
@@ -97,7 +97,9 @@ def _memory_block(chat: dict, text: str, budget_tokens: int) -> tuple[str, int]:
     if led:
         lines.append("Session ledger:")
         lines += [f"[{x['num']}] ({x['kind']}) {x['text']}" for x in led[-25:]]
-    rec = recall_originals(chat["id"], text, summarized_only=True)
+    # Only originals that a summary replaced: a turn still in the window (and the new question itself, which is
+    # archived before the window is built) would otherwise be sent twice.
+    rec = [m for m in recall_originals(chat["id"], text, summarized_only=True) if m["summarized_into"] is not None]
     if rec:
         lines.append("Original earlier messages that match the user's reference:")
         lines += [f"- ({datetime.fromtimestamp(m['ts']).strftime('%Y-%m-%d')}, {m['role']}) {m['content']}" for m in rec]

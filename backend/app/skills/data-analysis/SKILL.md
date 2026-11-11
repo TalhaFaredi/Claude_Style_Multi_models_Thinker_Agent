@@ -1,7 +1,8 @@
 ---
 name: data-analysis
 description: Analyze tables and numbers carefully and report findings with the numbers that support them.
-triggers: [data, dataset, spreadsheet, excel, csv, statistics, average, median, trend, correlation, analyze, analyse, analysis, kpi, metrics]
+triggers: [dataset, spreadsheet, excel, csv, statistics, median, correlation, kpi, metrics]
+hints: [data, average, trend, analyze, analyse, analysis, numbers, table]
 modes: [simple, thinker, planner]
 source: inspired by https://github.com/anthropics/skills (xlsx skill); rewritten for this app
 ---

@@ -17,6 +17,7 @@ import asyncio
 import json
 import time
 import math
+import re
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable
 
@@ -67,6 +68,8 @@ class CallContext:
     run_id: str | None = None
     on_switch: Callable[[str, str], Awaitable[None] | None] | None = None
     on_notice: Callable[[str], Awaitable[None] | None] | None = None
+    on_event: Callable[[dict], Awaitable[None] | None] | None = None
+    label: str | None = None                # role/step label; copy the context for concurrent agents
 
 
 # ------------------------------------------------------------------ HTTP client (shared, pooled)
@@ -118,6 +121,9 @@ def _prepare_messages(info: ModelInfo, messages: list[dict]) -> list[dict]:
 
 # Models that answered "reasoning is mandatory": learned at run time, so the failing request is sent once, not on every call.
 _ALWAYS_REASONS: set[str] = set()
+# (model, thinking level) pairs that spent the whole allowance on reasoning and returned no text: learned at run
+# time, so the wasted call is paid once per server run instead of once per agent per question.
+_NO_ANSWER_AT: set[tuple[str, str]] = set()
 
 
 def _body(info: ModelInfo, messages: list[dict], *, stream: bool, tools, temperature, max_tokens, thinking: str) -> dict:
@@ -155,7 +161,24 @@ def _usage_from(info: ModelInfo, u: dict | None) -> Usage:
     cost = float(cost)
     if not math.isfinite(cost) or cost < 0 or min(prompt, completion, cached, reasoning) < 0:
         raise LLMError("Provider returned invalid usage", retriable=True, billed_unknown=True)
-    return Usage(prompt, completion, cached, reasoning, cost, estimated=not bool(u))
+    return Usage(prompt, completion, cached, reasoning, cost, estimated=u.get("cost") is None)
+
+
+def _returned_reasoning(message: dict) -> str:
+    """Read provider-returned text/summary only; ignore encrypted reasoning payloads."""
+    direct = message.get("reasoning")
+    if isinstance(direct, str) and direct:
+        return direct
+    details = message.get("reasoning_details") or []
+    if not isinstance(details, list):
+        return ""
+    parts = []
+    for detail in details:
+        if isinstance(detail, dict):
+            value = detail.get("text") or detail.get("summary")
+            if isinstance(value, str) and value:
+                parts.append(value)
+    return "\n".join(parts)
 
 
 def _raise_for(status: int, body_text: str) -> None:
@@ -199,7 +222,7 @@ async def _read_json(info: ModelInfo, body: dict) -> ChatResult:
     msg = ch.get("message") or {}
     tool_calls = [{"id": t.get("id"), "name": t["function"]["name"], "arguments": t["function"].get("arguments") or "{}"} for t in (msg.get("tool_calls") or [])]
     return ChatResult(text=msg.get("content") or "", tool_calls=tool_calls, usage=_usage_for(info, body, j.get("usage")), model=info.id,
-                      reasoning=msg.get("reasoning") or "", finish=ch.get("finish_reason") or "")
+                      reasoning=_returned_reasoning(msg), finish=ch.get("finish_reason") or "")
 
 
 async def _read_stream(info: ModelInfo, body: dict, on_text, on_reasoning) -> ChatResult:
@@ -227,10 +250,11 @@ async def _read_stream(info: ModelInfo, body: dict, on_text, on_reasoning) -> Ch
             for ch in d.get("choices") or []:
                 delta = ch.get("delta") or {}
                 res.finish = ch.get("finish_reason") or res.finish
-                if delta.get("reasoning"):
-                    res.reasoning += delta["reasoning"]
+                returned = _returned_reasoning(delta)
+                if returned:
+                    res.reasoning += returned
                     if on_reasoning:
-                        await _maybe(on_reasoning(delta["reasoning"]))
+                        await _maybe(on_reasoning(returned))
                 if delta.get("content"):
                     res.text += delta["content"]
                     if on_text:
@@ -315,6 +339,25 @@ def _log(ctx: CallContext, stage: str, info: ModelInfo, usage: Usage | None, ms:
             0 if err else 1, redact(err)[:300] if err else None, int(u.estimated), 0 if err else 1))
 
 
+async def _call_events(ctx: CallContext, stage: str, info: ModelInfo, usage: Usage, *, ok: bool,
+                       reasoning: str = "", requested: bool = False) -> None:
+    """Send billed usage and only provider-exposed reasoning; never send prompt text or keys."""
+    if not ctx.on_event:
+        return
+    await _maybe(ctx.on_event({
+        "type": "call_usage", "stage": stage, "model": info.id, "provider": info.provider, "label": ctx.label,
+        "inTokens": usage.prompt, "outTokens": usage.completion, "reasoningTokens": usage.reasoning,
+        "usd": round(usage.cost, 8), "estimated": usage.estimated, "ok": ok,
+    }))
+    if ok:
+        # This is an excerpt of returned provider text, not the model's unexposed internal thoughts.
+        notes = [part.strip()[:160] for part in re.split(r"(?<=[.!?])\s+|\n+", reasoning[:1600]) if part.strip()][:5]
+        if not (requested or notes):
+            return   # router, checker and judge calls never ask for thinking: no "notes unavailable" row for them
+        await _maybe(ctx.on_event({"type": "model_thinking", "stage": stage, "model": info.id,
+                                   "label": ctx.label, "available": bool(notes), "notes": notes}))
+
+
 def _retriable(e: BaseException) -> bool:
     return isinstance(e, LLMError) and e.retriable
 
@@ -340,6 +383,7 @@ async def _call_with_retries(info: ModelInfo, body: dict, stream: bool, on_text,
                 if booking:
                     booking.settle(stage, usage.cost, usage.prompt, usage.completion, usage.cached, estimated=usage.estimated)
                 _log(ctx, stage, info, usage, int((time.perf_counter() - t0) * 1000), str(e))
+                await _call_events(ctx, stage, info, usage, ok=False)
                 if stream and on_reset:
                     await _maybe(on_reset())
                 if e.status == 400 and body.get("reasoning", {}).get("enabled") is False and "reasoning" in str(e).lower():
@@ -357,10 +401,13 @@ async def _call_with_retries(info: ModelInfo, body: dict, stream: bool, on_text,
                 if booking:
                     booking.settle(stage, usage.cost, usage.prompt, usage.completion, usage.cached, estimated=True)
                 _log(ctx, stage, info, usage, int((time.perf_counter() - t0) * 1000), type(e).__name__)
+                await _call_events(ctx, stage, info, usage, ok=False)
                 raise
             if booking:
                 booking.settle(stage, res.usage.cost, res.usage.prompt, res.usage.completion, res.usage.cached, estimated=res.usage.estimated)
             _log(ctx, stage, info, res.usage, int((time.perf_counter() - t0) * 1000), None)
+            asked = isinstance(body.get("reasoning"), dict) and body["reasoning"].get("enabled") is not False
+            await _call_events(ctx, stage, info, res.usage, ok=True, reasoning=res.reasoning, requested=asked)
             if not on_reset:
                 for chunk in buffered_reasoning:
                     await _maybe(on_reasoning(chunk))
@@ -399,7 +446,8 @@ async def complete(
             await _maybe(ctx.on_switch(model, mid))
         if thinking == "off" and info.id in _ALWAYS_REASONS and ctx.on_notice:
             await _maybe(ctx.on_notice("This model requires reasoning. Using its lowest thinking level within the approved budget."))
-        body = _body(info, messages, stream=stream, tools=tools, temperature=temperature, max_tokens=max_tokens, thinking=thinking)
+        effort = "off" if (info.id, thinking) in _NO_ANSWER_AT else thinking
+        body = _body(info, messages, stream=stream, tools=tools, temperature=temperature, max_tokens=max_tokens, thinking=effort)
         try:
             res = await _call_with_retries(info, body, stream, on_text if stream else None, on_reasoning if stream else None, ctx, stage, on_reset, max_retries)
         except LLMError as e:
@@ -415,6 +463,8 @@ async def complete(
             if info.id in _ALWAYS_REASONS:
                 last_err = LLMError(f"{info.name} returned no answer: reasoning used the whole token allowance")
                 continue
+            if res.finish == "length" or res.usage.reasoning:
+                _NO_ANSWER_AT.add((info.id, thinking))
             if ctx.on_notice:
                 await _maybe(ctx.on_notice("The model used its whole allowance on thinking; asking again without thinking."))
             body = _body(info, messages, stream=stream, tools=tools, temperature=temperature, max_tokens=max_tokens, thinking="off")

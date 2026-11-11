@@ -1,0 +1,106 @@
+{
+  "results": [
+    {
+      "name": "F1 empty Send stays disabled",
+      "pass": true
+    },
+    {
+      "name": "F2 invalid persisted team blocks Send and explains",
+      "pass": true
+    },
+    {
+      "name": "F3 fifth agent is limit with toast",
+      "pass": true
+    },
+    {
+      "name": "F4 File reader alone disables models without tools",
+      "pass": true
+    },
+    {
+      "name": "F6 nonthinking model uses Off and disables High",
+      "pass": true
+    },
+    {
+      "name": "F8 expensive file shows amber threshold and Text only",
+      "pass": true
+    },
+    {
+      "name": "F5 charts disable nonvision models",
+      "pass": true
+    },
+    {
+      "name": "F7 no run starts before budget choice",
+      "pass": true
+    },
+    {
+      "name": "F7 allow once uses disclosed hard cap",
+      "pass": true
+    },
+    {
+      "name": "F9 mode locked during live answer",
+      "pass": true
+    },
+    {
+      "name": "F10 plan shows done-test and waits for approval",
+      "pass": true
+    },
+    {
+      "name": "Failed approval keeps retryable Approve button",
+      "pass": true
+    },
+    {
+      "name": "Approval sends exact plan version",
+      "pass": true
+    },
+    {
+      "name": "F11 memory delete asks Keep or Delete",
+      "pass": true
+    },
+    {
+      "name": "Failed memory delete keeps the fact",
+      "pass": true
+    },
+    {
+      "name": "Memory removed only after success",
+      "pass": true
+    },
+    {
+      "name": "F12 full reset clears Temporary chat",
+      "pass": true
+    },
+    {
+      "name": "F12 full reset restores long-term memory",
+      "pass": true
+    },
+    {
+      "name": "F13 mixed strengths warn and suggest similar models",
+      "pass": true
+    },
+    {
+      "name": "Offline send restores exact draft",
+      "pass": true
+    },
+    {
+      "name": "Offline Retry completes without dropping original question",
+      "pass": true
+    },
+    {
+      "name": "Risky tool requires and transmits explicit denial",
+      "pass": true
+    },
+    {
+      "name": "Summary continuation opens actual persisted fork and cards",
+      "pass": true
+    },
+    {
+      "name": "Failed Simple step can explicitly use team",
+      "pass": true
+    },
+    {
+      "name": "No browser page errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "serverLog": "▲ Next.js 16.4.5\n- Local:         http://127.0.0.1:3138\n- Network:       http://127.0.0.1:3138\n✓ Ready in 175ms\n✓ Running next.config.mjs took 34ms\n"
+}

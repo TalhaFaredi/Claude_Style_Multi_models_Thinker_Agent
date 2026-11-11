@@ -2,13 +2,18 @@
 .env
 .env.*
 !.env.example
+.claude/settings.local.json
 
 node_modules/
+__pycache__/
+*.pyc
 .next/
 .next-*/
 *.tsbuildinfo
 frontend/e2e/shots/
 frontend/e2e/shots*/
+frontend/e2e/spec-failure.png
+frontend/e2e/spec-results.json
 spec-audit/live-acceptance-data/
 spec-audit/live-memory-data/
 spec-audit/live-file-data/

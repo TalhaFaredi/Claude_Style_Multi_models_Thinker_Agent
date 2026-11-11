@@ -1,0 +1,173 @@
+{
+  "live": true,
+  "capUsd": 0.01,
+  "visionModel": "google/gemma-3-12b-it",
+  "answerModel": "qwen/qwen3.7-flash",
+  "fixtures": 20,
+  "results": [
+    {
+      "file": "manual-1.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n  \"liters\": 31,\n  \"quarter\": \"Q2\",\n  \"sources\": [\n    \"manual-1.pdf p.1\",\n    \"manual-1.pdf p.2\"\n  ]\n}",
+      "readingCost": 5.5e-05
+    },
+    {
+      "file": "manual-2.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 32,\n\"quarter\": \"Q2\",\n\"sources\": [\n\"manual-2.pdf p.1\",\n\"manual-2.pdf p.2\"\n]\n}",
+      "readingCost": 5.5e-05
+    },
+    {
+      "file": "manual-3.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 33,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-3.pdf p.1\", \"manual-3.pdf p.2\"]\n}",
+      "readingCost": 5.5e-05
+    },
+    {
+      "file": "manual-4.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 34,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-4.pdf p.1\", \"manual-4.pdf p.2\"]\n}",
+      "readingCost": 5.6e-05
+    },
+    {
+      "file": "manual-5.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n  \"liters\": 35,\n  \"quarter\": \"Q2\",\n  \"sources\": [\n    \"manual-5.pdf p.1\",\n    \"manual-5.pdf p.2\"\n  ]\n}",
+      "readingCost": 5.5e-05
+    },
+    {
+      "file": "manual-6.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 36,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-6.pdf p.1\", \"manual-6.pdf p.2\"]\n}",
+      "readingCost": 5.7e-05
+    },
+    {
+      "file": "manual-7.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 37,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-7.pdf p.1\", \"manual-7.pdf p.2\"]\n}",
+      "readingCost": 5.8e-05
+    },
+    {
+      "file": "manual-8.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n  \"liters\": 38,\n  \"quarter\": \"Q2\",\n  \"sources\": [\n    \"manual-8.pdf p.1\",\n    \"manual-8.pdf p.2\"\n  ]\n}",
+      "readingCost": 5.7e-05
+    },
+    {
+      "file": "manual-9.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 39,\n\"quarter\": \"Q2\",\n\"sources\": [\n\"manual-9.pdf p.1\",\n\"manual-9.pdf p.2\"\n]\n}",
+      "readingCost": 5.8e-05
+    },
+    {
+      "file": "manual-10.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 40,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-10.pdf p.1\", \"manual-10.pdf p.2\"]\n}",
+      "readingCost": 5.6e-05
+    },
+    {
+      "file": "manual-11.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 41,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-11.pdf p.1\", \"manual-11.pdf p.2\"]\n}",
+      "readingCost": 5.7e-05
+    },
+    {
+      "file": "manual-12.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 42,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-12.pdf p.1\", \"manual-12.pdf p.2\"]\n}",
+      "readingCost": 5.9e-05
+    },
+    {
+      "file": "manual-13.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 43,\n\"quarter\": \"Q2\",\n\"sources\": [\n\"manual-13.pdf p.1\",\n\"manual-13.pdf p.2\"\n]\n}",
+      "readingCost": 5.9e-05
+    },
+    {
+      "file": "manual-14.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 44,\n\"quarter\": \"Q2\",\n\"sources\": [\n\"manual-14.pdf p.1\",\n\"manual-14.pdf p.2\"\n]\n}",
+      "readingCost": 5.7e-05
+    },
+    {
+      "file": "manual-15.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 45,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-15.pdf p.1\", \"manual-15.pdf p.2\"]\n}",
+      "readingCost": 5.5e-05
+    },
+    {
+      "file": "manual-16.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n  \"liters\": 46,\n  \"quarter\": \"Q2\",\n  \"sources\": [\n    \"manual-16.pdf p.1\",\n    \"manual-16.pdf p.2\"\n  ]\n}",
+      "readingCost": 5.8e-05
+    },
+    {
+      "file": "manual-17.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 47,\n\"quarter\": \"Q2\",\n\"sources\": [\n\"manual-17.pdf p.1\",\n\"manual-17.pdf p.2\"\n]\n}",
+      "readingCost": 5.4e-05
+    },
+    {
+      "file": "manual-18.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 48,\n\"quarter\": \"Q2\",\n\"sources\": [\n\"manual-18.pdf p.1\",\n\"manual-18.pdf p.2\"\n]\n}",
+      "readingCost": 5.8e-05
+    },
+    {
+      "file": "manual-19.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n\"liters\": 49,\n\"quarter\": \"Q2\",\n\"sources\": [\"manual-19.pdf p.1\", \"manual-19.pdf p.2\"]\n}",
+      "readingCost": 5.6e-05
+    },
+    {
+      "file": "manual-20.pdf",
+      "correctFacts": true,
+      "correctCitations": true,
+      "visualReadingSucceeded": true,
+      "answer": "{\n  \"liters\": 50,\n  \"quarter\": \"Q2\",\n  \"sources\": [\n    \"manual-20.pdf p.1\",\n    \"manual-20.pdf p.2\"\n  ]\n}",
+      "readingCost": 6e-05
+    }
+  ],
+  "spentUsd": 0.00163296,
+  "passed": true,
+  "withinBudget": true,
+  "estimatedCharges": 0
+}
