@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { money } from "@/domain/format";
+import { money, preciseMoney } from "@/domain/format";
 import { modelDisabledReason } from "@/domain/guardrails";
 import type { ModelInfo, Provider } from "@/domain/types";
 import { isLive } from "@/services/api";
@@ -25,6 +25,16 @@ type Caps = { tools: boolean; vision: boolean; thinking: boolean };
 /** Per-million-token price, so cost is visible before choosing. */
 const priceLine = (m: ModelInfo) =>
   m.priceIn != null && m.priceOut != null ? `${m.priceKnown === false ? "price unknown" : `${money(m.priceIn)} in / ${money(m.priceOut)} out per 1M tokens`}` : "";
+
+const BAND_LABELS = { small: "Small (1k-5k tokens)", medium: "Medium (5k-50k tokens)", high: "High (50k-500k tokens)" } as const;
+const bandLine = (m: ModelInfo, band: keyof typeof BAND_LABELS) => {
+  const estimate = m.tentativeCosts?.[band];
+  if (!estimate) return `${BAND_LABELS[band]}: price unavailable`;
+  if (!estimate.available && !estimate.fits && m.context && m.context < estimate.minTokens) return `${BAND_LABELS[band]}: exceeds this model's context`;
+  if (estimate.minUsd == null || estimate.maxUsd == null) return `${BAND_LABELS[band]}: price unavailable`;
+  const capped = estimate.maxTokens < { small: 5000, medium: 50000, high: 500000 }[band];
+  return `${BAND_LABELS[band]}: ${preciseMoney(estimate.minUsd)}-${preciseMoney(estimate.maxUsd)}${capped ? ` (up to ${estimate.maxTokens.toLocaleString()} tokens)` : ""}`;
+};
 
 /** Search, provider filter, must-have filter. Rows that do not fit the task are grey with the reason (F4, F5). */
 export default function ModelPickerDialog() {
@@ -107,6 +117,7 @@ export default function ModelPickerDialog() {
           ))}
         </div>
         {note && <span className="hint warn">{note}</span>}
+        <span className="hint" role="status">{rows.length} models shown. Estimates below are for one call at roughly 70% input and 30% output; extra agents, retries, tools and checks add cost. The question budget is checked separately before Send.</span>
         {down.map(([name, v]) => <span className="hint warn" key={name} role="status">{name === "nvidia" ? "NVIDIA" : "OpenRouter"} models are unavailable: {v.reason}. Calls fall back to another provider.</span>)}
 
         <div className="list">
@@ -119,13 +130,15 @@ export default function ModelPickerDialog() {
           {rows.map((m) => {
             const why = modelDisabledReason(m, needs);
             const on = isSelected(m);
-            const features = [m.tools && "Tools", m.vision && "Vision", m.thinking && "Thinking"].filter(Boolean).join(", ");
+            const features = [m.tools && "Tools", m.vision && "Vision"].filter(Boolean).join(", ");
             return (
               <button key={m.id} type="button" className={`mrow${on ? " on" : ""}${why ? " off" : ""}`} aria-pressed={on} disabled={!!why} onClick={() => pick(m.id)}>
                 <span className="mrow-main">
                   <span className="strong">{m.name}</span>
                   <span className="hint">{m.company} · {m.provider === "nvidia" ? "NVIDIA" : "OpenRouter"}{features ? ` · ${features}` : ""}</span>
                   {priceLine(m) && <span className="hint">{priceLine(m)}</span>}
+                  <span className="hint">Thinking: {m.thinking ? "supported (Off, Low, Medium, High)" : "not supported"}. Notes appear after a call only if the provider returns them.</span>
+                  {(["small", "medium", "high"] as const).map((band) => <span className="hint" key={band}>{bandLine(m, band)}</span>)}
                   <span className="hint">Speed: {m.speed ?? "not measured yet"}</span>
                   {why && <span className="hint warn">{why}</span>}
                 </span>

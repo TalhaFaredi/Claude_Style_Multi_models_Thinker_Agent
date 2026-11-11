@@ -69,6 +69,7 @@ export interface ModelNeeds {
 
 /** F4 + F5: why a model row is greyed out, or "" when it is usable. */
 export function modelDisabledReason(model: ModelInfo, needs: ModelNeeds): string {
+  if (model.chatCompatible === false) return "This model cannot answer chat prompts";
   if (model.available === false) return model.whyUnavailable || "Provider unavailable";
   if (needs.tools && !model.tools) return "No tools, and your tools are on";
   if (needs.vision && !model.vision) return "Cannot see images; your file has charts";

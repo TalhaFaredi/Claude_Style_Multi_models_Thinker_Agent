@@ -1,35 +1,15 @@
 # Multi-Mode AI Assistant - Frontend
 
-## Repository branches
+This branch contains the updated frontend source in `frontend/`.
 
-- [main](https://github.com/TalhaFaredi/Claude_Style_Multi_models_Thinker_Agent/tree/main): backend source (default branch).
-- [backend](https://github.com/TalhaFaredi/Claude_Style_Multi_models_Thinker_Agent/tree/backend): the same backend release.
-- [frontend](https://github.com/TalhaFaredi/Claude_Style_Multi_models_Thinker_Agent/tree/frontend): Next.js frontend source.
+| Branch | Contents |
+|---|---|
+| [main](https://github.com/TalhaFaredi/Claude_Style_Multi_models_Thinker_Agent/tree/main) | Complete application: frontend, backend, documentation and specifications |
+| [backend](https://github.com/TalhaFaredi/Claude_Style_Multi_models_Thinker_Agent/tree/backend) | Backend source and shared specifications/documentation |
+| [frontend](https://github.com/TalhaFaredi/Claude_Style_Multi_models_Thinker_Agent/tree/frontend) | Frontend source and shared specifications/documentation |
 
-Code keeps its original `backend/` or `frontend/` directory. Clone the backend and frontend branches into separate directories to run both services.
+See [frontend/README.md](frontend/README.md) for installation, configuration and commands.
 
-## Run the frontend
+The current design is [specification v3](Multi-Mode_AI_Assistant_Complete_Spec_v3.pdf). The [v2 addendum](spec-audit/SPEC-ADDENDUM.md), [v3 addendum](spec-audit/SPEC-ADDENDUM-v3.md), original specification and PDF-building scripts are included.
 
-Requires Node 20+. Start the backend at http://localhost:8000, then:
-
-```powershell
-cd frontend
-npm ci
-# Create .env.local containing: NEXT_PUBLIC_API_URL=http://localhost:8000
-npm run dev:webpack
-```
-
-Open http://localhost:3000. Without `NEXT_PUBLIC_API_URL`, the interface uses a scripted demo. Provider keys belong only in the backend environment.
-
-## Verify
-
-```powershell
-cd frontend
-npm test
-npm run typecheck
-npm run build:webpack
-```
-
-Fonts and licenses are bundled locally.
-
-See [frontend/README.md](frontend/README.md) for configuration and source details.
+For running both components from one checkout, use the `main` branch. Provider credentials and local user data are excluded from Git.

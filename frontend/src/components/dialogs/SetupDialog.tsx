@@ -9,6 +9,7 @@ import { useEstimate } from "@/hooks/useEstimate";
 import { useChatStore } from "@/store/chatStore";
 import { useModelsStore } from "@/store/modelsStore";
 import { useUiStore } from "@/store/uiStore";
+import { isLive } from "@/services/api";
 import { Modal, ModalBody } from "../ui/Modal";
 import { Segmented } from "../ui/Segmented";
 import { SimpleSetup, modelCaps } from "./setup/SimpleSetup";
@@ -36,6 +37,7 @@ export default function SetupDialog() {
   const setModel = useChatStore((s) => s.setModel);
   const patchSimple = useChatStore((s) => s.patchSimple);
   const close = useUiStore((s) => s.close);
+  const open = useUiStore((s) => s.open);
   const openPicker = useUiStore((s) => s.openModelPicker);
   const estimate = useEstimate();
   const presets = useModelsStore((s) => s.presets);
@@ -110,6 +112,8 @@ export default function SetupDialog() {
         {showTeam && <TeamSetup heading={mode === "thinker" ? "Your team of agents" : "Team for the hard steps (Thinker)"} />}
 
         <span className="lock">Always on: risky tools ask first, max 10 tool calls, max 2 retries per step, max 2 re-plans, max 20 plan steps. Planner waits for your approval.</span>
+        <button type="button" className="btn" disabled={!isLive} onClick={() => open("prompts")}>View system and agent prompt templates</button>
+        {!isLive && <span className="hint">Connect the backend to inspect its current prompt templates.</span>}
       </ModalBody>
     </Modal>
   );

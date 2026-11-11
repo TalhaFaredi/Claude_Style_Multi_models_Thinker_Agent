@@ -11,7 +11,7 @@ import { toast } from "@/store/uiStore";
 export function MetaLine({ m }: { m: AiMessage }) {
   const thinkDeeper = useChatStore((s) => s.thinkDeeper);
   const who = m.kind === "simple" ? getModel(m.snapshot.simple.model).name : m.kind === "thinker" ? `${m.agents.length || m.snapshot.team.agents} agents` : `${m.plan?.steps.length ?? 0} steps`;
-  const cost = m.costUsd ? ` · ${m.calls} calls · ${money(m.costUsd)}` : "";
+  const cost = m.calls > 0 || m.costUsd > 0 ? ` · ${m.calls} calls · ${money(m.costUsd)}` : "";
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(m.text); toast("Copied"); } catch { toast("Could not copy"); }

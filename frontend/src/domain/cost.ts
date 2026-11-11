@@ -5,6 +5,7 @@ import type { DemoFile, ReaderId, SimpleConfig, StepRunMode, TeamConfig, Mode } 
 const AUTO_COMPOSER_COST = 0.02;
 const PLANNER_BASE = 0.08;
 const PLANNER_SIMPLE_STEPS = 0.03;
+const callCost = (id: string): number => getModel(id).callCost ?? Infinity;
 
 /** Spec Part 2 §4: OCR API $2 per 1,000 pages; vision about 1,600 in + 300 out tokens on Haiku. */
 export const PAGE_COST = { ocr: 0.002, vision: 0.0031 } as const;
@@ -19,10 +20,10 @@ export function teamCalls(team: TeamConfig): number {
 export function teamCost(team: TeamConfig): number {
   const perRound =
     team.source === "same"
-      ? team.agents * getModel(team.model).callCost
-      : team.mixed.reduce((sum, id) => sum + getModel(id).callCost, 0);
+      ? team.agents * callCost(team.model)
+      : team.mixed.reduce((sum, id) => sum + callCost(id), 0);
   const rounds = team.style === "together" ? team.rounds : 1;
-  const composer = team.composer === "auto" ? AUTO_COMPOSER_COST : getModel(team.composer).callCost;
+  const composer = team.composer === "auto" ? AUTO_COMPOSER_COST : callCost(team.composer);
   return perRound * rounds + composer;
 }
 
@@ -41,7 +42,7 @@ export interface EstimateInput {
 export function estimateCost({ mode, simple, team, runIn }: EstimateInput): number {
   if (mode === "thinker") return teamCost(team);
   if (mode === "planner") return plannerCost(runIn, team);
-  return getModel(simple.model).callCost;
+  return callCost(simple.model);
 }
 
 /** Price of reading a file with the chosen reader (Part 2 §4). Text pages are always free. */

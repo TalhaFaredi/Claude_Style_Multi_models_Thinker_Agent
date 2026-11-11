@@ -35,6 +35,16 @@ export function reduceRunEvent(m: AiMessage, e: RunEvent): AiMessage {
       return { ...m, permission: e.resolved ? null : e, status: e.resolved ? "live" : "waiting", controlError: null };
     case "cost":
       return { ...m, calls: e.calls, costUsd: e.usd };
+    case "call_usage": {
+      const { type: _type, ...usage } = e;
+      void _type;
+      return { ...m, callUsages: [...(m.callUsages ?? []), usage] };
+    }
+    case "model_thinking": {
+      const { type: _type, ...thinking } = e;
+      void _type;
+      return { ...m, modelThinking: [...(m.modelThinking ?? []), thinking] };
+    }
     case "warning":
       return { ...m, warning: m.warning ? `${m.warning} ${e.message}` : e.message };
     case "done":

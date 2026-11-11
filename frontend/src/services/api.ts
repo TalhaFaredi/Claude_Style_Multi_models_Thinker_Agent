@@ -31,10 +31,44 @@ export async function toError(res: Response): Promise<ApiError> {
   return new ApiError(message, res.status, detail);
 }
 
+const TOKEN_KEY = "assistantApiToken";
+
+function accessToken(): string {
+  try {
+    return (typeof window !== "undefined" && window.localStorage.getItem(TOKEN_KEY)) || process.env.NEXT_PUBLIC_API_TOKEN || "";
+  } catch {
+    return process.env.NEXT_PUBLIC_API_TOKEN ?? "";
+  }
+}
+
+/**
+ * fetch() for the backend. A server started with APP_TOKEN answers 401 without the token: the user is asked
+ * for it once, it is kept in this browser only, and the request is sent again.
+ */
+export async function apiFetch(url: string, init: RequestInit = {}, retried = false): Promise<Response> {
+  const sent = accessToken();
+  const headers = new Headers(init.headers);
+  if (sent) headers.set("Authorization", `Bearer ${sent}`);
+  const res = await fetch(url, { ...init, headers });
+  if (res.status !== 401 || retried || typeof window === "undefined") return res;
+  let next = accessToken();   // another request may have asked already while this one was in flight
+  if (next === sent) {
+    next = (window.prompt("This server needs its access token (APP_TOKEN in the server's .env):") ?? "").trim();
+    if (next) {
+      try {
+        window.localStorage.setItem(TOKEN_KEY, next);
+      } catch {
+        /* storage blocked: the token is asked again next time */
+      }
+    }
+  }
+  return next && next !== sent ? apiFetch(url, init, true) : res;
+}
+
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, init);
+    res = await apiFetch(`${API_URL}${path}`, init);
   } catch {
     throw new ApiError(`Cannot reach the backend at ${API_URL}. Is it running?`, 0);
   }
@@ -158,9 +192,22 @@ export interface ServerFact {
   replaced: boolean;
 }
 
+export interface PromptTemplate {
+  id: string;
+  title: string;
+  role: string;
+  content: string;
+}
+
+export interface PromptCatalog {
+  version: string;
+  templates: PromptTemplate[];
+}
+
 export const api = {
   config: () => call<ServerConfig>("/api/config"),
   models: (q = "") => call<ModelInfo[]>(`/api/models${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  prompts: () => call<PromptCatalog>("/api/prompts"),
   putSettings: (patch: Partial<ServerSettings>) => call<ServerSettings>("/api/settings", json("PUT", patch)),
   usage: () => call<{ totalUsd: number; monthBudget: number; readingUsd?: number; readingBudgetPercent?: number; readingAlarm?: boolean }>("/api/usage"),
   estimate: (body: { mode: Mode; chatId: string; prompt: string; simple: SimpleConfig; team: TeamConfig; runIn: StepRunMode; planModel?: string }, signal?: AbortSignal) =>
@@ -194,14 +241,14 @@ export const api = {
   exportChat: async (chatId: string, includeFiles: boolean, password?: string): Promise<Blob> => {
     const qs = new URLSearchParams({ includeFiles: String(includeFiles) });
     // The password goes in a header, never the URL, so it cannot land in server logs or browser history.
-    const res = await fetch(`${API_URL}/api/chats/${chatId}/export?${qs}`, password ? { headers: { "X-Export-Password": password } } : undefined);
+    const res = await apiFetch(`${API_URL}/api/chats/${chatId}/export?${qs}`, password ? { headers: { "X-Export-Password": password } } : undefined);
     if (!res.ok) throw await toError(res);
     return res.blob();
   },
   artifactUrl: (id: string) => `${API_URL}/api/artifacts/${id}`,
   /** "Summarize now": streams the four checked steps, then a note and the new context. */
   compact: async (chatId: string, model: string, maxCost: number, onEvent: (e: RunEvent) => void) => {
-    const res = await fetch(`${API_URL}/api/chats/${chatId}/compact`, json("POST", { model, maxCost }));
+    const res = await apiFetch(`${API_URL}/api/chats/${chatId}/compact`, json("POST", { model, maxCost }));
     await readSse(res, onEvent);
   },
 };

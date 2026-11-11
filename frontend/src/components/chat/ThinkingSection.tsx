@@ -15,7 +15,7 @@ interface Props {
 /** Collapsed line that opens to short reasoning notes. Open state is local to this block. */
 export function ThinkingSection({ notes, live, simple, seconds }: Props) {
   const [open, setOpen] = useState(false);
-  const label = live ? "Thinking..." : simple ? `Thought for ${seconds ?? 4} seconds` : "How this was built";
+  const label = live ? "Working..." : simple && seconds != null ? `Thought for ${seconds} seconds` : "How this was built";
   return (
     <>
       <button type="button" className="toggle-line" aria-expanded={open} onClick={() => setOpen((v) => !v)}>

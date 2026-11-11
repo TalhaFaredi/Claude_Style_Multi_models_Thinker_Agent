@@ -97,7 +97,7 @@ let active: { handle: RunHandle; batcher: ReturnType<typeof createEventBatcher> 
 
 const emptyAi = (id: string, kind: RunKind, prompt: string, auto: boolean, snapshot: AiMessage["snapshot"]): AiMessage => ({
   id, role: "ai", kind, prompt, auto, status: "live", statusText: "Starting", thinkingNotes: [], tool: null, text: "", citations: [],
-  roundText: "", agents: [], plan: null, output: null, calls: 0, costUsd: 0, error: null, warning: null, thoughtSeconds: null, snapshot,
+  roundText: "", agents: [], plan: null, output: null, calls: 0, costUsd: 0, callUsages: [], modelThinking: [], error: null, warning: null, thoughtSeconds: null, snapshot,
 });
 
 /** Turn a message saved by the server back into what the UI renders. */
@@ -106,7 +106,8 @@ function fromServer(raw: Record<string, unknown>, fallback: AiMessage["snapshot"
   if (role === "user") return { id: String(raw.id), role: "user", text: String(raw.text ?? ""), files: (raw.files as string[]) ?? [] };
   if (role === "sys") return { id: String(raw.id), role: "sys", text: String(raw.text ?? "") };
   const base = emptyAi(String(raw.id), (raw.kind as RunKind) ?? "simple", String(raw.prompt ?? ""), Boolean(raw.auto), (raw.snapshot as AiMessage["snapshot"]) ?? fallback);
-  const m = { ...base, ...(raw as Partial<AiMessage>), id: base.id, role: "ai" as const };
+  const meta = raw.meta as { callUsages?: AiMessage["callUsages"]; modelThinking?: AiMessage["modelThinking"] } | undefined;
+  const m = { ...base, ...(raw as Partial<AiMessage>), callUsages: (raw.callUsages as AiMessage["callUsages"]) ?? meta?.callUsages ?? [], modelThinking: (raw.modelThinking as AiMessage["modelThinking"]) ?? meta?.modelThinking ?? [], id: base.id, role: "ai" as const };
   // a run that was interrupted (reload, server stop) is shown as stopped, never as live forever
   if (m.status === "live" || m.status === "waiting") { m.status = "stopped"; m.permission = null; if (m.plan) m.plan = { ...m.plan, awaitingApproval: false }; }
   return m;

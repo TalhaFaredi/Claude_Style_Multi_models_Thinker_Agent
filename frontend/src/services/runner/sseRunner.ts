@@ -1,5 +1,5 @@
 import type { RunEvent, RunRequest } from "@/domain/events";
-import { ApiError, readSse, toError } from "../api";
+import { ApiError, apiFetch, readSse, toError } from "../api";
 import type { RunHandle, Runner } from "./types";
 
 /**
@@ -29,7 +29,7 @@ export function createSseRunner(baseUrl: string): Runner {
 
       void (async () => {
         try {
-          const res = await fetch(`${base}/api/runs`, {
+          const res = await apiFetch(`${base}/api/runs`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
             body: JSON.stringify(body),
@@ -47,7 +47,7 @@ export function createSseRunner(baseUrl: string): Runner {
       })();
 
       const post = async (path: string, payload?: unknown) => {
-        const response = await fetch(`${base}/api/runs/${request.id}/${path}`, {
+        const response = await apiFetch(`${base}/api/runs/${request.id}/${path}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: payload === undefined ? undefined : JSON.stringify(payload),

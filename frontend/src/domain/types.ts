@@ -3,7 +3,7 @@ export type Mode = "auto" | "simple" | "thinker" | "planner";
 export type RunKind = Exclude<Mode, "auto">;
 
 export type Provider = "openrouter" | "nvidia";
-export type CostLevel = "$" | "$$" | "$$$";
+export type CostLevel = "$" | "$$" | "$$$" | "unknown";
 
 export interface ModelInfo {
   id: string;
@@ -17,7 +17,7 @@ export interface ModelInfo {
   /** Strength tier 1 (small) to 3 (frontier). Used for the mixed-strength warning (F13 / T5). */
   tier: 1 | 2 | 3;
   /** Price of one typical call in USD (1,500 tokens in, 600 out). From the Model Registry. */
-  callCost: number;
+  callCost: number | null;
   /** USD per 1M input / output tokens (live registry only). */
   priceIn?: number;
   priceOut?: number;
@@ -28,6 +28,10 @@ export interface ModelInfo {
   priceKnown?: boolean;
   featured?: boolean;
   speed?: string;
+  /** Tentative price for one model call; not the full question budget. */
+  tentativeCosts?: Record<"small" | "medium" | "high", { minTokens: number; maxTokens: number; minUsd: number | null; maxUsd: number | null; fits: boolean; available?: boolean } | null>;
+  pricingNote?: string;
+  chatCompatible?: boolean;
 }
 
 export type ThinkingLevel = "off" | "low" | "medium" | "high";

@@ -1,0 +1,284 @@
+{
+  "live": true,
+  "smoke": true,
+  "capUsd": 0.01,
+  "spentUsd": 0.0003948,
+  "models": [
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.7-flash"
+  ],
+  "runs": [
+    {
+      "task": "route-file",
+      "variant": "planner",
+      "expectedAnswer": "6",
+      "correct": true,
+      "answer": "The MD is ready: create_sum_report_md.md. 3 of 3 steps passed their checks.\n# Sum Report\n\n## Plan\n- **Step 1:** Calculate the sum of 1, 2, and 3.  \n- **Step 2:** Write the result as `FINAL: 6` in the file.\n\n## Calculation\n1. \\(1 + 2 = 3\\)  \n2. \\(3 + 3 = 6\\)\n\n## Result\n**FINAL: 6**",
+      "costUsd": 0.0003948,
+      "budgetUsd": 0.01,
+      "seconds": 67.687,
+      "withinBudget": true,
+      "withinTime": true,
+      "status": "done",
+      "routedMode": "planner",
+      "calls": [
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "router",
+          "in_tokens": 289,
+          "out_tokens": 21,
+          "cost": 6.62e-06,
+          "ms": 1698,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "plan",
+          "in_tokens": 0,
+          "out_tokens": 0,
+          "cost": 0.0,
+          "ms": 30,
+          "ok": 0,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "plan",
+          "in_tokens": 526,
+          "out_tokens": 178,
+          "cost": 4.07e-05,
+          "ms": 3967,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "step",
+          "in_tokens": 401,
+          "out_tokens": 149,
+          "cost": 3.289e-05,
+          "ms": 3325,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "checker",
+          "in_tokens": 332,
+          "out_tokens": 23,
+          "cost": 7.56e-06,
+          "ms": 1095,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "step",
+          "in_tokens": 442,
+          "out_tokens": 550,
+          "cost": 0.00011668,
+          "ms": 24122,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "checker",
+          "in_tokens": 232,
+          "out_tokens": 21,
+          "cost": 5.48e-06,
+          "ms": 1776,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "step",
+          "in_tokens": 316,
+          "out_tokens": 124,
+          "cost": 3.496e-05,
+          "ms": 3122,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "checker",
+          "in_tokens": 218,
+          "out_tokens": 24,
+          "cost": 5.32e-06,
+          "ms": 1420,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "stage": "plan:assemble",
+          "in_tokens": 626,
+          "out_tokens": 501,
+          "cost": 0.00011522,
+          "ms": 22095,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "stage": "checker",
+          "in_tokens": 531,
+          "out_tokens": 21,
+          "cost": 1.146e-05,
+          "ms": 2952,
+          "ok": 1,
+          "usage_estimated": 0
+        },
+        {
+          "model": "qwen/qwen3.7-flash",
+          "stage": "memory:ledger",
+          "in_tokens": 194,
+          "out_tokens": 93,
+          "cost": 1.791e-05,
+          "ms": 1322,
+          "ok": 1,
+          "usage_estimated": 0
+        }
+      ],
+      "calibration": [
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 349,
+          "reportedPromptTokens": 289,
+          "usageEstimated": false,
+          "actualToEstimate": 0.8281,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 528,
+          "reportedPromptTokens": 526,
+          "usageEstimated": false,
+          "actualToEstimate": 0.9962,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 390,
+          "reportedPromptTokens": 401,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0282,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 307,
+          "reportedPromptTokens": 332,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0814,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 529,
+          "reportedPromptTokens": 442,
+          "usageEstimated": false,
+          "actualToEstimate": 0.8355,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 256,
+          "reportedPromptTokens": 232,
+          "usageEstimated": false,
+          "actualToEstimate": 0.9062,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 274,
+          "reportedPromptTokens": 316,
+          "usageEstimated": false,
+          "actualToEstimate": 1.1533,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 244,
+          "reportedPromptTokens": 218,
+          "usageEstimated": false,
+          "actualToEstimate": 0.8934,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "openai/gpt-oss-20b",
+          "estimatedPromptTokens": 590,
+          "reportedPromptTokens": 626,
+          "usageEstimated": false,
+          "actualToEstimate": 1.061,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "meta-llama/llama-3.1-8b-instruct",
+          "estimatedPromptTokens": 477,
+          "reportedPromptTokens": 531,
+          "usageEstimated": false,
+          "actualToEstimate": 1.1132,
+          "withinConservativeBound": true
+        },
+        {
+          "model": "qwen/qwen3.7-flash",
+          "estimatedPromptTokens": 184,
+          "reportedPromptTokens": 194,
+          "usageEstimated": false,
+          "actualToEstimate": 1.0543,
+          "withinConservativeBound": true
+        }
+      ],
+      "expectedMode": "planner",
+      "routeCorrect": true
+    }
+  ],
+  "unrun": [],
+  "dataDirectory": "D:\\projects IUB\\Multi-Agent APP\\spec-audit\\live-acceptance-data\\9da14de02cbb49788c835aea4eca4867",
+  "scope": "Measured task-set accuracy, not a claim of general correctness",
+  "scores": {
+    "simple": {
+      "attempted": 0,
+      "accuracy": null,
+      "costUsd": 0,
+      "defaultEligible": false
+    },
+    "same-independent": {
+      "attempted": 0,
+      "accuracy": null,
+      "costUsd": 0,
+      "defaultEligible": false
+    },
+    "same-together": {
+      "attempted": 0,
+      "accuracy": null,
+      "costUsd": 0,
+      "defaultEligible": false
+    },
+    "mixed-independent": {
+      "attempted": 0,
+      "accuracy": null,
+      "costUsd": 0,
+      "defaultEligible": false
+    },
+    "mixed-together": {
+      "attempted": 0,
+      "accuracy": null,
+      "costUsd": 0,
+      "defaultEligible": false
+    }
+  },
+  "gates": {
+    "fixedSetComplete": false,
+    "simpleAllCorrect": false,
+    "teamBeatsSimple": false,
+    "routingAllCorrect": false,
+    "allWithinLimits": true
+  },
+  "evaluationVersion": 2,
+  "evaluationNote": "Exact numeric/fraction evaluation accepts Markdown and LaTeX notation. Answers, provider calls and costs were not changed; evaluation was corrected offline."
+}

@@ -57,6 +57,29 @@ export interface ContextPartInfo {
   tokens?: number;
 }
 
+/** A settled provider attempt. A failed attempt may still have an estimated charge. */
+export interface CallUsageView {
+  stage: string;
+  model: string;
+  provider: string;
+  label?: string;
+  inTokens: number;
+  outTokens: number;
+  reasoningTokens: number;
+  usd: number;
+  estimated: boolean;
+  ok: boolean;
+}
+
+/** Short notes only when the provider included reasoning in its response. */
+export interface ModelThinkingView {
+  stage: string;
+  model: string;
+  label?: string;
+  notes: string[];
+  available: boolean;
+}
+
 export type ContextLevelName = "normal" | "notice" | "alarm" | "compact";
 
 /** Server-reported state of the memory window (live backend). */
@@ -86,6 +109,8 @@ export type RunEvent =
   | ({ type: "permission" } & PermissionView)
   | { type: "output"; file: OutputFile }
   | { type: "cost"; calls: number; usd: number }
+  | ({ type: "call_usage" } & CallUsageView)
+  | ({ type: "model_thinking" } & ModelThinkingView)
   /** New fill level of the memory window. Live servers also send level, parts and prices. */
   | ({ type: "context"; percent: number } & Partial<Omit<ContextInfo, "percent">>)
   /** Warning shown with the answer: budget stop, failed check after retries (C19), mixed strengths (T5)... */

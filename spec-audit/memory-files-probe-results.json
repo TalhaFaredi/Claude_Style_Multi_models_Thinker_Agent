@@ -1,0 +1,104 @@
+﻿{
+  "free_text_read": {
+    "estimate": 0.0,
+    "approved": 0,
+    "actual_mock_cost": 0.0001,
+    "model_calls": [
+      "file:card"
+    ]
+  },
+  "fact_roundtrip": {
+    "original_timestamp": 1000000000,
+    "restored": [
+      {
+        "text": "Budget is $5",
+        "ts": 1794215887.5932515,
+        "replaced_by": null,
+        "replaced_at": null
+      },
+      {
+        "text": "Budget is $20",
+        "ts": 1794215887.5932906,
+        "replaced_by": null,
+        "replaced_at": null
+      }
+    ]
+  },
+  "used_memory_export": {
+    "fact_in_consumer_prompt": true,
+    "exported_facts": []
+  },
+  "unread_file_roundtrip": {
+    "original_in_zip": true,
+    "restored_files": 0
+  },
+  "detached_then_deleted": {
+    "file_still_stored": true,
+    "reading_still_cached": true,
+    "chunks_still_indexed": true
+  },
+  "other_chat_changes_reader": {
+    "original_chat_reader_before": "auto",
+    "original_chat_reader_after_other_chat_text_read": "text",
+    "original_chat_file_tokens": 0
+  },
+  "compaction_critical_cap": {
+    "reported_ok": true,
+    "reported_preserved_extra": 80,
+    "lost_exact_amounts": [
+      "$1061",
+      "$1062",
+      "$1063",
+      "$1064",
+      "$1065",
+      "$1066",
+      "$1067",
+      "$1068",
+      "$1069",
+      "$1070",
+      "$1071",
+      "$1072",
+      "$1073",
+      "$1074",
+      "$1075",
+      "$1076",
+      "$1077",
+      "$1078",
+      "$1079",
+      "$1080"
+    ],
+    "lost_count": 20
+  },
+  "context_overflow": {
+    "window": 4000,
+    "usable": 3400,
+    "built_tokens": 26466,
+    "percent": 778,
+    "compaction_ok": false,
+    "reason": "Nothing older than the last 10 turns can be summarized. If files fill the window, ask a narrower question so search mode is used."
+  },
+  "vector_chart_pdf": {
+    "analyzed": [
+      {
+        "page": 1,
+        "kind": "text",
+        "chars": 56,
+        "table": false,
+        "images": 0
+      }
+    ],
+    "has_page_image": false
+  },
+  "slides.pptx": {
+    "status": 415,
+    "message": "Unsupported file type .pptx"
+  },
+  "legacy.doc": {
+    "status": 415,
+    "message": "Unsupported file type .doc"
+  },
+  "legacy.xls": {
+    "status": 415,
+    "message": "Unsupported file type .xls"
+  }
+}

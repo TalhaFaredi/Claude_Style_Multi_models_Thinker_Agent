@@ -10,6 +10,7 @@ import { useUiStore, type DialogId } from "@/store/uiStore";
 const DIALOGS: Record<DialogId, React.ComponentType> = {
   setup: dynamic(() => import("./SetupDialog"), { ssr: false }),
   models: dynamic(() => import("./ModelPickerDialog"), { ssr: false }),
+  prompts: dynamic(() => import("./PromptDialog"), { ssr: false }),
   budget: dynamic(() => import("./BudgetDialog"), { ssr: false }),
   file: dynamic(() => import("./FileDialog"), { ssr: false }),
   card: dynamic(() => import("./DocumentCardDialog"), { ssr: false }),
