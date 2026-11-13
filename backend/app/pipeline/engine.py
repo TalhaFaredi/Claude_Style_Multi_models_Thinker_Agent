@@ -33,6 +33,7 @@ log = logging.getLogger("engine")
 class Run:
     rc: RunContext
     task: asyncio.Task | None = None
+    owner: int = 0   # user id
     finished: bool = False
     created: float = field(default_factory=time.monotonic)
 
@@ -44,6 +45,11 @@ class RunManager:
     def get(self, run_id: str) -> Run | None:
         return self.runs.get(run_id)
 
+    def load(self, owner: int) -> tuple[int, int]:
+        """(running in total, running for this user)"""
+        live = [r for r in self.runs.values() if not r.finished]
+        return len(live), sum(1 for r in live if r.owner == owner)
+
     async def start(self, req: dict) -> Run:
         if req["id"] in self.runs or db.one("SELECT id FROM messages WHERE id=?", (req["id"],)):
             raise ValueError("This run ID has already been used. Start a new run with a new ID.")
@@ -51,9 +57,11 @@ class RunManager:
             raise ValueError("A question is already running in this chat")
         budget = req["budgetUsd"]   # includes the explicitly approved one-question cap
         meter = CostMeter(budget=budget)
-        kind = req["mode"] if req["mode"] != "auto" else "simple"
-        view = fresh_view(kind, req["prompt"], {"simple": req["simple"], "team": req["team"], "runIn": req["runIn"]}, req["mode"] == "auto")
-        timeout = PLANNER_TIMEOUT_S if req["mode"] in ("planner", "auto") else RUN_TIMEOUT_S
+        if req["mode"] not in router.MODES:   # callers that bypass the API schema (tests, scripts) get the plain default
+            req["mode"] = "simple"
+        kind = req["mode"]
+        view = fresh_view(kind, req["prompt"], {"simple": req["simple"], "team": req["team"], "runIn": req["runIn"]}, False)
+        timeout = PLANNER_TIMEOUT_S if kind == "planner" else RUN_TIMEOUT_S
         holder: dict[str, RunContext] = {}
         ctx = CallContext(meter=meter, chat_id=req["chatId"], run_id=req["id"],
                           on_switch=lambda a, b: holder["rc"].status(f"{registry.get(a).name} failed, switching to {registry.get(b).name}"),
@@ -62,7 +70,7 @@ class RunManager:
         rc = RunContext(run_id=req["id"], chat_id=req["chatId"], req=req, meter=meter, settings=memory.get_settings(), queue=asyncio.Queue(),
                         view=view, deadline=time.monotonic() + timeout, ctx=ctx, house=meter)
         holder["rc"] = rc
-        run = Run(rc)
+        run = Run(rc, owner=db.uid())
         self.runs[req["id"]] = run
         run.task = asyncio.create_task(self._wrap(run))
         return run
@@ -154,11 +162,12 @@ async def pipeline(rc: RunContext, text: str, model_id: str) -> Result:
     # Any earlier answer makes this a follow-up, however short the chat is (a token threshold missed young chats).
     has_history = bool(db.one("SELECT 1 FROM messages WHERE chat_id=? AND role='assistant' AND content<>'' LIMIT 1", (rc.chat_id,)))
     r = await router.route(text, req["mode"], has_history=has_history, has_files=bool(files.chat_readings(rc.chat_id)), ctx=rc.ctx)
-    await rc.emit({"type": "route", "kind": r.kind, "reason": r.reason if req["mode"] == "auto" else ""})
+    await rc.emit({"type": "route", "kind": r.kind, "reason": ""})
     if r.refusal:
         req["refused"] = True
         return Result(r.refusal)
-    if r.clarify:   # C2
+    if r.clarify:   # C2: only before a Thinker or Planner run; the view says so, because no selected model wrote this text
+        rc.view["clarify"] = True
         await rc.emit({"type": "clarify", "question": r.clarify})
         await rc.text(r.clarify)
         return Result(r.clarify)

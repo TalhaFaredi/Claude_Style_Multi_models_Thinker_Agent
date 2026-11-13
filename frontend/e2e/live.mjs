@@ -36,7 +36,7 @@ const closeDialog = async () => { await page.keyboard.press("Escape"); await pag
 const money = (t) => Number((t.match(/\$([0-9.]+)/) ?? [])[1] ?? NaN);
 
 // ------------------------------------------------------------ start: real models, real price
-await page.goto(URL, { waitUntil: "networkidle" });
+await page.goto(URL.replace(/\/$/, "") + "/app", { waitUntil: "networkidle" });
 check("connects to the backend (no error screen)", await visible(page.getByText("What should we work on?"), 30000));
 const estText = await page.locator(".costlink").innerText();
 check("estimate comes from the server (a tiny real price, not $0.000)", /About \$0\.0+\d/.test(estText), estText);
@@ -53,15 +53,15 @@ check("NVIDIA models are greyed with a reason", rows.some((r) => /NIM/.test(r) &
 await shot("01-model-picker");
 await page.getByRole("button", { name: "Done" }).click();
 await closeDialog();
-await mode("Auto").click();
+await mode("Simple").click();
 
-// ------------------------------------------------------------ Auto -> Simple, real answer and cost
+// ------------------------------------------------------------ Simple, real answer and cost
 await ask("What is a token in a language model? One short paragraph.");
-check("Auto routing note", await visible(page.getByText(/Auto chose/)));
+check("no Auto routing note", !(await page.getByText(/Auto chose/).count()));
 check("mode locked while the answer runs (F9)", await mode("Thinker").isDisabled());
 await idle();
 const meta = await page.locator(".foot").first().innerText();
-check("answer has a real cost, not 'sample'", /calls · \$0\.0+\d/.test(meta) && !/sample/.test(meta), meta.split("\n")[0]);
+check("answer has a real cost, not 'sample'", /calls? · cost \$0\.0+\d/.test(meta) && !/sample/.test(meta), meta.split("\n")[0]);
 check("answer text streamed", (await page.locator(".answer").first().innerText()).length > 40);
 const pct = Number((await page.locator(".meter .hint").innerText()).match(/\d+/)[0]);
 check("memory meter shows the server's real window fill", pct > 0 && pct < 60, "pct=" + pct);

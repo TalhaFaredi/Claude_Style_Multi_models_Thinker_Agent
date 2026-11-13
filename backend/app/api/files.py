@@ -24,8 +24,8 @@ def _own_file(chat_id: str, fp: str) -> None:
 
 @router.post("/api/chats/{chat_id}/files")
 async def upload_file(chat_id: str, file: UploadFile = File(...)):
+    memory.ensure_chat(chat_id)   # before the body is read: someone else's chat id is refused without buffering the upload
     data = await file.read(MAX_UPLOAD_BYTES + 1)
-    memory.ensure_chat(chat_id)
     try:
         return await asyncio.to_thread(files.ingest, chat_id, file.filename or "upload", data)
     except files.FileError as e:

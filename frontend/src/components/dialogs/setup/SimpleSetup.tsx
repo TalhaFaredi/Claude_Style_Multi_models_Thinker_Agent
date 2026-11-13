@@ -35,7 +35,7 @@ export function SimpleSetup() {
   return (
     <div className="grid2">
       <div className="field">
-        <span className="field-label">Model</span>
+        <span className="field-label">Model that answers</span>
         <button type="button" className="btn" style={{ justifyContent: "flex-start" }} onClick={() => openPicker("main")}>{model.name}</button>
         <span className="hint">{modelCaps(simple.model)}</span>
       </div>
@@ -48,17 +48,19 @@ export function SimpleSetup() {
           onChange={(thinking) => patchSimple({ thinking })}
           options={THINKING.map((v) => ({ value: v, label: v[0].toUpperCase() + v.slice(1), disabled: !model.thinking && v !== "off" }))}
         />
-        {!model.thinking && <span className="hint warn">This model cannot think step by step.</span>}
+        {model.thinking ? <span className="hint">More thinking gives better answers to hard questions, and costs more.</span> : <span className="hint warn">This model cannot think step by step.</span>}
       </div>
 
       <div className="field">
         <span className="field-label">Answer style</span>
         <Segmented label="Answer style" value={simple.style} onChange={(style) => patchSimple({ style })} options={STYLES} />
+        <span className="hint">Precise: sticks to facts. Creative: more varied wording and ideas.</span>
       </div>
 
       <div className="field">
-        <label className="field-label" htmlFor="max-answer-length">Maximum answer length (tokens)</label>
+        <label className="field-label" htmlFor="max-answer-length">Longest answer allowed (tokens)</label>
         <input id="max-answer-length" className="input" type="number" min={256} max={8192} step={256} value={simple.maxTokens ?? 1200} onChange={(e) => patchSimple({ maxTokens: Math.max(256, Math.min(8192, Number(e.target.value) || 1200)) })} />
+        <span className="hint">About {Math.round(((simple.maxTokens ?? 1200) * 0.75) / 50) * 50} words. A higher limit can cost more.</span>
       </div>
 
       <div className="field">

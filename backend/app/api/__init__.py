@@ -6,6 +6,6 @@
     runs.py     start a run (SSE), approve, edit, stop, rating
     memory.py   long-term facts
 """
-from app.api import chats, files, memory, meta, runs
+from app.api import auth, chats, files, memory, meta, runs
 
-ROUTERS = [meta.router, chats.router, files.router, runs.router, memory.router]
+ROUTERS = [meta.router, auth.router, chats.router, files.router, runs.router, memory.router]

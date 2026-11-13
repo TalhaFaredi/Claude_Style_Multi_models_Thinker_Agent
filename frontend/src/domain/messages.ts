@@ -22,8 +22,10 @@ export interface AiMessage {
   kind: RunKind;
   /** The question that produced this answer (used for Retry and Think deeper). */
   prompt: string;
-  /** True when Auto picked the mode, so "Think deeper" is offered under Simple answers. */
+  /** Always false: kept because saved answers carry the field (it marked answers routed by the old Auto mode). */
   auto: boolean;
+  /** True when this is a helper's question asked before an expensive Thinker or Planner run, not an answer. */
+  clarify?: boolean;
   status: AiStatus;
   statusText: string;
   thinkingNotes: string[];

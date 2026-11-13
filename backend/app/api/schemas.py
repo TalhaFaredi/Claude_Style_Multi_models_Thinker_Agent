@@ -3,11 +3,18 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.core.config import LIMITS
 
 ModelId = Field(min_length=1, max_length=200)
+# The user always chooses the mode. There is no "auto": nothing but the selected mode and models answers a question.
+Mode = Literal["simple", "thinker", "planner"]
+
+
+def _legacy_mode(value):
+    """Requests saved or sent by an older client may still say "auto". It now means the plain default, Simple."""
+    return "simple" if value == "auto" else value
 
 
 class SimpleCfg(BaseModel):
@@ -39,7 +46,7 @@ class TeamCfg(BaseModel):
 class RunRequest(BaseModel):
     id: str = Field(min_length=1, max_length=64)
     chatId: str = Field(min_length=1, max_length=64)
-    mode: Literal["auto", "simple", "thinker", "planner"] = "auto"
+    mode: Mode = "simple"
     prompt: str = Field(min_length=1, max_length=60000)
     files: list[str] = Field(default_factory=list, max_length=50)
     simple: SimpleCfg
@@ -50,15 +57,19 @@ class RunRequest(BaseModel):
     allowOver: bool = False
     retryOf: str | None = Field(default=None, max_length=64)
 
+    _mode = field_validator("mode", mode="before")(_legacy_mode)
+
 
 class EstimateRequest(BaseModel):
-    mode: Literal["auto", "simple", "thinker", "planner"] = "auto"
+    mode: Mode = "simple"
     chatId: str | None = Field(default=None, max_length=64)
     prompt: str = Field(default="", max_length=60000)
     simple: SimpleCfg
     team: TeamCfg
     runIn: Literal["auto", "simple", "thinker"] = "auto"
     planModel: str | None = Field(default=None, min_length=1, max_length=200)
+
+    _mode = field_validator("mode", mode="before")(_legacy_mode)
 
 
 class ReadRequest(BaseModel):

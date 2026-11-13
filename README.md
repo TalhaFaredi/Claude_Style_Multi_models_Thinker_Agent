@@ -1,6 +1,6 @@
 # Multi-Mode AI Assistant
 
-A local AI workspace with **Simple**, **Thinker**, **Planner** and **Auto** modes. Choose a model, set a question budget, attach documents and watch the work progress in one chat interface.
+An AI workspace with **Simple**, **Thinker** and **Planner** modes. You choose the mode and the model, set a question budget, attach documents and watch the work progress in one chat interface.
 
 **Next.js + React frontend | FastAPI + Python backend | OpenRouter / NVIDIA model access**
 
@@ -15,7 +15,6 @@ A local AI workspace with **Simple**, **Thinker**, **Planner** and **Auto** mode
 | **Simple** | One model answers with your chosen thinking level, answer length and enabled tools. | ?Explain context windows with an example.? |
 | **Thinker** | Two to five agents answer independently or debate; a composer merges their answers. | ?Compare solar and wind power for a small business.? |
 | **Planner** | Produces a plan for approval, runs dependent steps, checks the results and builds the final output. | ?Make a two-page PDF report on solar power.? |
-| **Auto** | A small model chooses a mode for the task. Explicit mode selections are respected. | Send a question without choosing the workflow yourself. |
 
 Shared features include per-question budgets, usage logs, model capability filtering, permission prompts, document reading, checked outputs, searchable chat history, memory controls and ZIP export/import.
 
@@ -223,6 +222,7 @@ The backend owns model calls and execution decisions. The frontend displays type
 |   |-- src/styles/             # Design tokens and responsive CSS
 |   |-- tests/                  # Unit and transport tests
 |   |-- e2e/                    # Browser checks and screenshot capture
+|-- docker-compose.yml, Caddyfile, .env.production.example, DEPLOYMENT.md   # production deployment
 |-- scripts/dev.ps1             # Windows launcher for both services
 |-- docs/screenshots/           # README images and reproduction steps
 |-- spec-audit/                 # Selected implementation/verification reports
@@ -326,7 +326,20 @@ Live acceptance scripts in `backend/tests/live_*acceptance.py` make no requests 
 | Code sandbox is disabled | Install/run Docker's Linux engine and pull `python:3.12-alpine`, then restart the backend. No host-code fallback is used. |
 | A selected model cannot use tools/images/thinking | Choose a compatible model; the picker explains capability restrictions. |
 
-The backend stores local databases, originals and generated files under `backend/data/` by default; this directory is ignored by Git. The API currently has no login and is intended for local use. Keep it bound to loopback; this repository does not provide a hardened public multi-user deployment.
+The backend stores databases, originals and generated files under `backend/data/` by default (set `DATA_DIR` to move it); this directory is ignored by Git.
+
+## Accounts and running it for other people
+
+The app is **multi-user by default**: every visitor signs up or signs in, and each account's chats, files, memories, settings and spending are private to it. The landing page is `/`, the assistant is at `/app`, and there are sign-in, password reset, account and admin pages.
+
+| You want | Do this |
+|---|---|
+| **Run it publicly** (website, HTTPS, many users, spending caps, backups) | Follow **[DEPLOYMENT.md](DEPLOYMENT.md)**: `docker compose up -d --build` after filling in `.env` from [.env.production.example](.env.production.example). |
+| **Try it locally with accounts** | Start both services as above, open http://localhost:3000 and create an account. The first account whose e-mail is in `ADMIN_EMAILS` becomes an administrator. |
+| **Use it alone on your own machine without any login** | Put `AUTH_REQUIRED=0` in the root `.env`. The API is then open and single-user, so keep it bound to `127.0.0.1`. The server refuses this setting in production. |
+| **Keep data you created before accounts existed** | `python -m app.admin adopt-legacy you@example.com` (inside `backend/`) hands the old single-user data to an account. |
+
+Operator tools (inside `backend/`): `python -m app.admin` creates users, resets passwords, sets monthly allowances and disables accounts; `python -m app.backup` writes consistent database backups. Both are explained in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## License
 

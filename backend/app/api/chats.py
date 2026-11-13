@@ -79,6 +79,7 @@ async def chat_context(chat_id: str, model: str):
 
 @router.get("/api/chats/{chat_id}/ledger")
 async def chat_ledger(chat_id: str):
+    _chat_or_404(chat_id)
     return {"ledger": memory.ledger_items(chat_id), "summaries": memory.active_summaries(chat_id)}
 
 
@@ -86,10 +87,11 @@ async def chat_ledger(chat_id: str):
 async def compact_chat(chat_id: str, body: CompactRequest):
     """Summarize now (the Summarize button). Streams the four checked steps, then the result."""
     memory.ensure_chat(chat_id)
+    usage.ensure_can_spend()
     q: asyncio.Queue = asyncio.Queue()
 
     async def work():
-        ctx = CallContext(meter=CostMeter(budget=body.maxCost), chat_id=chat_id, run_id=f"compact:{chat_id}")
+        ctx = CallContext(meter=CostMeter(budget=usage.limit_budget(body.maxCost)), chat_id=chat_id, run_id=f"compact:{chat_id}")
         try:
             res = await memory.compact(chat_id, body.model, ctx, lambda step: q.put({"type": "compact", "step": step, "done": step >= 4}))
             text = compact_note(res)
@@ -110,7 +112,8 @@ async def compact_chat(chat_id: str, body: CompactRequest):
 @router.post("/api/chats/{chat_id}/fork")
 async def fork_chat(chat_id: str, body: CompactRequest):
     _chat_or_404(chat_id)
-    ctx = CallContext(meter=CostMeter(budget=body.maxCost), chat_id=chat_id, run_id=f"fork:{chat_id}")
+    usage.ensure_can_spend()
+    ctx = CallContext(meter=CostMeter(budget=usage.limit_budget(body.maxCost)), chat_id=chat_id, run_id=f"fork:{chat_id}")
     try:
         return await memory.fork_with_summary(chat_id, body.model, ctx)
     except (ValueError, RuntimeError) as e:

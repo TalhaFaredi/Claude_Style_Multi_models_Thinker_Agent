@@ -55,7 +55,8 @@ export function reduceRunEvent(m: AiMessage, e: RunEvent): AiMessage {
     case "context":
     case "compact":
     case "note":
-    case "clarify":
       return m;
+    case "clarify":
+      return { ...m, clarify: true };
   }
 }

@@ -14,16 +14,17 @@ from app.memory.settings import long_memory_on
 
 def add_fact(text: str, source: str, chat_id: str | None, replaces: int | None = None,
              ts: float | None = None, replaced_at: float | None = None) -> int:
-    fid = db.run("INSERT INTO facts(text,source,chat_id,ts) VALUES(?,?,?,?)", (text.strip(), source, chat_id, ts if ts is not None else db.now()))
+    fid = db.run("INSERT INTO facts(text,source,chat_id,ts,user_id) VALUES(?,?,?,?,?)", (text.strip(), source, chat_id, ts if ts is not None else db.now(), db.uid()))
     db.run("INSERT INTO fact_fts(text,fact_id) VALUES(?,?)", (text, fid))
     if replaces:   # C39: keep the new one, mark the old one "replaced" with the date (history is kept)
-        db.run("UPDATE facts SET replaced_by=?, replaced_at=? WHERE id=? AND deleted=0", (fid, replaced_at if replaced_at is not None else db.now(), replaces))
+        db.run("UPDATE facts SET replaced_by=?, replaced_at=? WHERE id=? AND deleted=0 AND user_id=?",
+               (fid, replaced_at if replaced_at is not None else db.now(), replaces, db.uid()))
     return fid
 
 
 def delete_fact(fid: int) -> bool:
     """Remove the fact from the table and the search index (no soft delete: the text is gone)."""
-    if not db.one("SELECT id FROM facts WHERE id=?", (fid,)):
+    if not db.one("SELECT id FROM facts WHERE id=? AND user_id=?", (fid, db.uid())):
         return False
     with db.tx() as c:
         c.execute("DELETE FROM fact_fts WHERE fact_id=?", (fid,))
@@ -33,9 +34,9 @@ def delete_fact(fid: int) -> bool:
 
 
 def list_facts(include_history: bool = False) -> list[dict]:
-    sql = "SELECT * FROM facts WHERE deleted=0" + ("" if include_history else " AND replaced_by IS NULL") + " ORDER BY ts DESC LIMIT 200"
+    sql = "SELECT * FROM facts WHERE deleted=0 AND user_id=?" + ("" if include_history else " AND replaced_by IS NULL") + " ORDER BY ts DESC LIMIT 200"
     out = []
-    for r in db.q(sql):
+    for r in db.q(sql, (db.uid(),)):
         src = r["source"] or ""
         out.append({"id": r["id"], "text": r["text"], "source": f"{datetime.fromtimestamp(r['ts']).strftime('%b %d')}, {src}".strip(", "),
                     "replaced": r["replaced_by"] is not None,
@@ -48,12 +49,12 @@ def relevant_facts(query: str, k: int = 6, include_history: bool = False) -> lis
     fq = db.fts_query(query)
     rows = []
     if fq:
-        rows = db.q("SELECT f.* FROM fact_fts x JOIN facts f ON f.id=x.fact_id WHERE fact_fts MATCH ? AND f.deleted=0 "
+        rows = db.q("SELECT f.* FROM fact_fts x JOIN facts f ON f.id=x.fact_id WHERE fact_fts MATCH ? AND f.deleted=0 AND f.user_id=? "
                     + ("" if include_history else "AND f.replaced_by IS NULL ") +
-                    "ORDER BY bm25(fact_fts) LIMIT ?", (fq, k))
+                    "ORDER BY bm25(fact_fts) LIMIT ?", (fq, db.uid(), k))
     if len(rows) < 3:
         seen = {r["id"] for r in rows}
-        rows += [r for r in db.q("SELECT * FROM facts WHERE deleted=0 AND replaced_by IS NULL ORDER BY ts DESC LIMIT 3") if r["id"] not in seen]
+        rows += [r for r in db.q("SELECT * FROM facts WHERE deleted=0 AND replaced_by IS NULL AND user_id=? ORDER BY ts DESC LIMIT 3", (db.uid(),)) if r["id"] not in seen]
     return [dict(r) for r in rows[:k]]
 
 

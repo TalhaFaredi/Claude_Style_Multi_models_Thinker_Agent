@@ -11,7 +11,6 @@ import { Pill } from "../ui/Pill";
 import { Segmented } from "../ui/Segmented";
 
 const MODES: { value: Mode; label: string }[] = [
-  { value: "auto", label: "Auto" },
   { value: "simple", label: "Simple" },
   { value: "thinker", label: "Thinker" },
   { value: "planner", label: "Planner" },
@@ -33,7 +32,7 @@ function SetupButton() {
   const open = useUiStore((s) => s.open);
   const preparing = useChatStore((s) => s.preparing);
   return (
-    <button type="button" className="btn" disabled={preparing} aria-label="Set up this mode" onClick={() => open("setup")}>
+    <button type="button" className="btn" disabled={preparing} aria-label="Set up this mode" title="Change the model and options for this mode" onClick={() => open("setup")}>
       <span className="dot" />
       <span>{setupLabel(mode, simple, team, runIn)}</span>
       <Icon name="chevronDown" size={14} />

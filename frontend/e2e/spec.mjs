@@ -89,7 +89,7 @@ const close=async()=>{await page.keyboard.press('Escape');await dialog().waitFor
 const ask=async(text)=>{await page.locator('textarea').fill(text);await page.getByRole('button',{name:'Send',exact:true}).click();};
 const idle=()=>page.getByRole('button',{name:'Send',exact:true}).waitFor();
 const settingsOpen=()=>page.getByRole('button',{name:'Settings, memory, data',exact:true}).click();
-const fresh=async()=>{if(page)await page.context().close();settings={...defaultSettings};const c=await browser.newContext();page=await c.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:3138',{waitUntil:'networkidle'});await page.getByText('What should we work on?').waitFor();};
+const fresh=async()=>{if(page)await page.context().close();settings={...defaultSettings};const c=await browser.newContext();page=await c.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:3138/app',{waitUntil:'networkidle'});await page.getByText('What should we work on?').waitFor();};
 try{
   await wait(async()=>{try{return(await fetch('http://127.0.0.1:3138')).ok;}catch{return false;}});
   await fresh();check('F1 empty Send stays disabled',await page.getByRole('button',{name:'Send',exact:true}).isDisabled());

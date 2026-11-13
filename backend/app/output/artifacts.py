@@ -55,8 +55,8 @@ def build_artifact(chat_id: str | None, title: str, content: str, fmt: str, sour
             warning = f"The {requested} format did not validate after one repair attempt. A plain-text file is provided."
             fmt, name, mime, data = "txt", f"{base}.txt", "text/plain", content.encode("utf-8")
     (folder / name).write_bytes(data)
-    db.run("INSERT INTO artifacts(id,chat_id,name,path,mime,pages,sources,ts) VALUES(?,?,?,?,?,?,?,?)",
-           (aid, chat_id, name, str(folder / name), mime, pages, sources, db.now()))
+    db.run("INSERT INTO artifacts(id,chat_id,name,path,mime,pages,sources,ts,user_id) VALUES(?,?,?,?,?,?,?,?,?)",
+           (aid, chat_id, name, str(folder / name), mime, pages, sources, db.now(), db.uid()))
     return {"id": aid, "name": name, "pages": pages, "sources": sources, "mime": mime, "format": fmt,
             "requestedFormat": requested, "repaired": repaired, "warning": warning, "notes": notes}
 
@@ -123,7 +123,7 @@ def render_checked(title: str, content: str, fmt: str, pages_target: int | None 
 def get_artifact(aid: str) -> dict | None:
     if not is_hex_id(aid):
         return None
-    r = db.one("SELECT * FROM artifacts WHERE id=?", (aid,))
+    r = db.one("SELECT * FROM artifacts WHERE id=? AND user_id=?", (aid, db.uid()))
     return dict(r) if r and Path(r["path"]).exists() else None
 
 

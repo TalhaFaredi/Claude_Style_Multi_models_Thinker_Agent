@@ -13,7 +13,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Keep provider keys in the root `.env`, or process environment variables. Names accepted are `OPENROUTER_API_KEY` / `open_router_api` and `NVIDIA_API_KEY` / `nvidian_key`. API docs are at `/docs`; health is `/health`. This is a local application with no login; bind to loopback.
+Keep provider keys in the root `.env`, or process environment variables. Names accepted are `OPENROUTER_API_KEY` / `open_router_api` and `NVIDIA_API_KEY` / `nvidian_key`. API docs are at `/docs`; health is `/health`. Accounts are on by default (`AUTH_REQUIRED=1`): every `/api` route needs a signed-in session and every query is scoped to the user. `AUTH_REQUIRED=0` gives the old open single-user mode for local use only. Production setup is in `../DEPLOYMENT.md`; the interactive docs at `/docs` are switched off when `APP_ENV=production`.
 
 OpenRouter's live registry supplies prices and capabilities. NVIDIA metadata is entered explicitly. Unknown prices are unavailable rather than assumed free: configure `NVIDIA_INPUT_USD_PER_MILLION` and `NVIDIA_OUTPUT_USD_PER_MILLION` to the rates for your account. Provider health checks use read-only endpoints and do not run test inference.
 

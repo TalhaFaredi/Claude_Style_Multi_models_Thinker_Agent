@@ -6,6 +6,8 @@ One Next.js/React chat screen implements the specification's Auto, Simple, Think
 
 Use Node 20+ and install dependencies with `npm install`. Set `NEXT_PUBLIC_API_URL=http://localhost:8000` in `frontend/.env.local` for the real backend; leave it unset for the scripted demo. Provider keys belong only in the root server `.env`.
 
+Routes: `/` landing page, `/signup` `/login` `/forgot` `/reset`, `/app` the assistant (needs an account in live mode), `/account`, `/admin`, `/terms`, `/privacy`. Site name, contact and legal details come from `NEXT_PUBLIC_SITE_*` / `NEXT_PUBLIC_CONTACT_EMAIL` / `NEXT_PUBLIC_OPERATOR_NAME` / `NEXT_PUBLIC_LEGAL_REVIEWED` (fixed at build time; see `src/domain/site.ts`). The browser tests open `/app`.
+
 ```powershell
 npm run dev:webpack
 # Production:

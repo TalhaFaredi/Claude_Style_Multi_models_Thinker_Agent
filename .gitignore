@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.production.example
 .claude/settings.local.json
 
 node_modules/
@@ -18,3 +19,6 @@ spec-audit/live-acceptance-data/
 spec-audit/live-memory-data/
 spec-audit/live-file-data/
 spec-audit/probe-data/
+
+# Production
+/backups/

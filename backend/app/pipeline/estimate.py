@@ -7,7 +7,7 @@ from app import memory
 from app.core import config
 from app.core.config import LIMITS
 from app.llm import registry
-from app.pipeline.router import regex_route
+from app.pipeline.router import MODES
 
 THINK_OUT = {"off": 0, "low": 1024, "medium": 2048, "high": 4096}
 
@@ -43,7 +43,7 @@ def team_size(team: dict) -> tuple[int, int]:
 
 async def estimate(req: dict, chat_id: str | None) -> dict:
     """req: {mode, simple:{model,thinking,tools}, team:{...}, runIn, prompt}. Returns {usd, calls, breakdown, kind}."""
-    mode = req.get("mode", "auto")
+    mode = req.get("mode") if req.get("mode") in MODES else "simple"
     simple, team = req.get("simple") or {}, req.get("team") or {}
     model = simple.get("model") or config.UTILITY_MODEL
     thinking = simple.get("thinking", "off")
@@ -53,14 +53,13 @@ async def estimate(req: dict, chat_id: str | None) -> dict:
         used = max(600, (await memory.meter(chat_id, model))["usedTokens"])
     prompt_tokens = max(20, len(req.get("prompt") or "") // 4)
     tools_on = bool((simple.get("tools") or {}).get("web")) and registry.get(model).tools
-    kind = regex_route(req.get("prompt") or "").kind if mode == "auto" else mode
+    kind = mode
 
     parts: dict[str, float] = {}
-    parts["input check"] = call_cost(config.UTILITY_MODEL, prompt_tokens + 500, 180)
-    calls = 1
-    if mode == "auto":
-        # Safety/clarity and Auto routing share the same cheap call.
-        pass
+    calls = 0
+    if config.INPUT_CHECK:
+        parts["input check"] = call_cost(config.UTILITY_MODEL, prompt_tokens + 400, 120)
+        calls += 1
     if kind == "simple":
         c = call_cost(model, used + prompt_tokens, max_tokens, thinking)
         if tools_on:

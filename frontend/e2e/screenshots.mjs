@@ -36,7 +36,7 @@ try {
     if (context) await context.close();
     context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
     page = await context.newPage();
-    await page.goto(`http://127.0.0.1:${port}`, { waitUntil: "networkidle" });
+    await page.goto(`http://127.0.0.1:${port}/app`, { waitUntil: "networkidle" });
     await page.getByText("What should we work on?").waitFor();
     await page.evaluate(() => document.fonts.ready);
   };

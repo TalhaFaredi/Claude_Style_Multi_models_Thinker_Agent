@@ -32,27 +32,27 @@ const mode = (n) => page.getByRole("group", { name: "Mode" }).getByRole("button"
 const ask = async (text) => { await page.locator("textarea").fill(text); await send().click(); };
 const closeDialog = async () => { await page.keyboard.press("Escape"); await page.getByRole("dialog").waitFor({ state: "detached" }).catch(() => {}); };
 
-await page.goto(URL, { waitUntil: "networkidle" });
+await page.goto(URL.replace(/\/$/, "") + "/app", { waitUntil: "networkidle" });
 check("empty state greeting", await visible(page.getByText("What should we work on?")));
-check("4 mode cards", (await page.locator(".modecard").count()) === 4);
+check("3 mode cards (Simple, Thinker, Planner; no Auto)", (await page.locator(".modecard").count()) === 3 && !(await page.getByRole("button", { name: "Auto", exact: true }).count()));
 check("F1 send disabled when empty", await send().isDisabled());
 await shot("01-empty");
 
-// ---------- Auto -> Simple, streaming, F9 lock
+// ---------- Simple (the default mode), streaming, F9 lock
 await ask("What is a token?");
-check("Auto routing note", await visible(page.getByText("Auto chose Simple")));
+check("no Auto routing note", !(await page.getByText(/Auto chose/).count()));
 check("F9 mode locked while running", await mode("Thinker").isDisabled());
 check("Stop button + lock pill while running", (await page.getByRole("button", { name: "Stop" }).isVisible()) && (await page.getByText("Working, mode locked").isVisible()));
 await shot("02-simple-running");
-check("Simple answer finishes with Think deeper", await visible(page.getByRole("button", { name: "Think deeper" })));
+check("Simple answer finishes and offers a team", await visible(page.getByRole("button", { name: "Ask a team instead" })));
 check("tool chip + citations", (await page.getByText("Used 3 web sources").isVisible()) && (await page.locator(".cite").count()) === 3);
 check("answer streamed", (await page.locator(".answer").first().innerText()).includes("sample answer"));
-check("meta line has cost", await page.locator(".foot").first().innerText().then((t) => /calls/.test(t)));
+check("meta line has cost", await page.locator(".foot").first().innerText().then((t) => /calls?/.test(t)));
 check("mode unlocked after done", await mode("Thinker").isEnabled());
 await shot("03-simple-done");
 
-// ---------- Think deeper -> Thinker
-await page.getByRole("button", { name: "Think deeper" }).click();
+// ---------- Ask a team instead -> Thinker
+await page.getByRole("button", { name: "Ask a team instead" }).click();
 check("Thinker progress line", await visible(page.getByText("3 x Claude Sonnet 5.5, on their own")));
 await page.getByRole("button", { name: "Show agents" }).click();
 await page.locator(".agent").nth(2).waitFor(T);
@@ -67,7 +67,7 @@ await ask("Make a 2-page PDF report on solar power");
 check("plan waits for approval", await visible(page.getByRole("button", { name: "Approve and run" })));
 const runningBefore = await page.locator(".step .pill", { hasText: "Running" }).count();
 check("F10 no step running before approval", runningBefore === 0);
-check("Stop is the only way out, mode locked", await mode("Auto").isDisabled());
+check("Stop is the only way out, mode locked", await mode("Simple").isDisabled());
 await shot("06-plan-approval");
 await page.getByRole("button", { name: "Approve and run" }).click();
 check("plan runs a retry note", await visible(page.getByText("Retry 1 of 2")));

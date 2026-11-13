@@ -10,7 +10,6 @@ import { isOverBudget, oneQuestionCap, normalizeThinking, stepAgents, stepRounds
 import { CONTEXT_LEVELS } from "@/domain/limits";
 import type { AiMessage, Message } from "@/domain/messages";
 import { reduceRunEvent } from "@/domain/reduceRunEvent";
-import { routeAuto } from "@/domain/router";
 import type { Mode, PendingFile, ReaderId, RunKind, SimpleConfig, StepRunMode, TeamConfig } from "@/domain/types";
 import { api, ApiError, isLive, type ChatFile, type ServerConfig, type UploadedFile } from "@/services/api";
 import { getRunner, type RunHandle } from "@/services/runner";
@@ -183,15 +182,14 @@ export const useChatStore = create<ChatState>()(
       const beginRun = (text: string, opts: { addUser: boolean; kind?: RunKind; auto: boolean; retryOf?: string }) => {
         const s = get();
         const live = isLive;
-        // Mock: the client routes Auto. Live: the server does, and tells us with a `route` event.
-        const route = opts.kind ? { kind: opts.kind, reason: "" } : s.mode === "auto" ? (live ? { kind: "simple" as RunKind, reason: "" } : routeAuto(text)) : { kind: s.mode as RunKind, reason: "" };
+        // The mode is always the user's choice (or the one a button asks for, e.g. "Ask a team instead").
+        const route = { kind: opts.kind ?? s.mode, reason: "" };
         const files = s.pending.filter((p) => p.status === "ready").map((p) => p.name);
         const now = Date.now();
         const aiId = uid("a");
         const ai = emptyAi(aiId, route.kind, text, opts.auto, { simple: s.simple, team: s.team, runIn: s.runIn });
         const added: Message[] = [];
         if (opts.addUser) added.push({ id: `u${now}`, role: "user", text, files });
-        if (!live && opts.auto && s.mode === "auto" && route.reason) added.push({ id: `s${now}`, role: "sys", text: route.reason });
         added.push(ai);
 
         set({ messages: [...s.messages.filter((m) => m.id !== opts.retryOf), ...added], draft: "", pending: live ? s.pending : [], running: true, allowOnce: false });
@@ -259,7 +257,7 @@ export const useChatStore = create<ChatState>()(
 
       return {
         chatId: isLive ? newChatId() : "c1",
-        mode: "auto",
+        mode: "simple",
         simple: DEFAULT_SIMPLE,
         team: DEFAULT_TEAM,
         runIn: "auto",
@@ -321,13 +319,13 @@ export const useChatStore = create<ChatState>()(
           const model = presets.balanced;
           pendingIntent = null;
           const mixed = [...new Set([presets.balanced, presets.best, ...useModelsStore.getState().models.filter((m) => m.available !== false).map((m) => m.id)])].slice(0, 3);
-          set({ mode: "auto", simple: { ...DEFAULT_SIMPLE, model, thinking: normalizeThinking(getModel(model), DEFAULT_SIMPLE.thinking) }, planModel: model, team: { ...DEFAULT_TEAM, model, mixed, style: "independent" }, runIn: "auto", budget: 0.25, allowOnce: false, serverEstimate: null });
+          set({ mode: "simple", simple: { ...DEFAULT_SIMPLE, model, thinking: normalizeThinking(getModel(model), DEFAULT_SIMPLE.thinking) }, planModel: model, team: { ...DEFAULT_TEAM, model, mixed, style: "independent" }, runIn: "auto", budget: 0.25, allowOnce: false, serverEstimate: null });
         },
 
         send: async (override) => {
           const s = get();
           const text = (override ?? s.draft).trim();
-          await prepareRun(pendingIntent?.text === text ? pendingIntent : { text, opts: { addUser: true, auto: s.mode === "auto" } });
+          await prepareRun(pendingIntent?.text === text ? pendingIntent : { text, opts: { addUser: true, auto: false } });
         },
 
         stop: async () => {
@@ -368,7 +366,7 @@ export const useChatStore = create<ChatState>()(
         retry: async (id) => {
           const msg = get().messages.find((m): m is AiMessage => m.id === id && m.role === "ai");
           if (!msg || get().running) return;
-          await prepareRun({ text: msg.prompt, opts: { addUser: false, kind: msg.auto ? undefined : msg.kind, auto: msg.auto, retryOf: id } });
+          await prepareRun({ text: msg.prompt, opts: { addUser: false, kind: msg.kind, auto: false, retryOf: id } });
         },
 
         thinkDeeper: async (id) => {
@@ -514,7 +512,12 @@ export const useChatStore = create<ChatState>()(
     {
       // Live and mock keep separate preferences: their model ids are different.
       name: isLive ? "mma-chat-config-live" : "mma-chat-config",
-      version: 1,
+      version: 2,
+      // v1 could hold mode "auto", which no longer exists: such a saved choice becomes Simple.
+      migrate: (saved) => {
+        const state = (saved ?? {}) as { mode?: string };
+        return { ...state, mode: state.mode === "thinker" || state.mode === "planner" ? state.mode : "simple" } as never;
+      },
       storage: safeStorage(),
       skipHydration: true,
       // Only user preferences persist; messages and runs are per-session here.

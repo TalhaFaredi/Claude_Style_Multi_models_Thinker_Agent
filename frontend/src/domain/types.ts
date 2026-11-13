@@ -1,6 +1,7 @@
-export type Mode = "auto" | "simple" | "thinker" | "planner";
-/** The mode that actually runs (Auto resolves to one of these). */
-export type RunKind = Exclude<Mode, "auto">;
+/** The user always picks the mode. (There used to be an "auto" mode that picked for them; it is gone.) */
+export type Mode = "simple" | "thinker" | "planner";
+/** The mode that runs: the same three values. */
+export type RunKind = Mode;
 
 export type Provider = "openrouter" | "nvidia";
 export type CostLevel = "$" | "$$" | "$$$" | "unknown";

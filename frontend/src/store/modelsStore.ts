@@ -8,7 +8,7 @@ type Readers = Record<ReaderId, { available: boolean; reason: string }>;
 
 interface ModelsState {
   models: ModelInfo[];
-  /** Auto's Fast / Balanced / Best choices. */
+  /** The server's Fast / Balanced / Best model suggestions (used by "make it cheaper" and reset). */
   presets: Presets;
   providers: ServerConfig["providers"];
   readers: Readers | null;

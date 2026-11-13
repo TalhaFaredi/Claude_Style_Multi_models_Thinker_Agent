@@ -333,9 +333,9 @@ async def _call_once(info: ModelInfo, body: dict, stream: bool, on_text, on_reas
 def _log(ctx: CallContext, stage: str, info: ModelInfo, usage: Usage | None, ms: int, err: str | None) -> None:
     """One row per call: the books. No prompt or answer text is stored here."""
     u = usage or Usage()
-    db.run("INSERT INTO calls(ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cached_tokens,reasoning_tokens,cost,ms,ok,error,usage_estimated,completed) "
-           "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-           (db.now(), ctx.run_id, ctx.chat_id, stage, info.provider, info.id, u.prompt, u.completion, u.cached, u.reasoning, u.cost, ms,
+    db.run("INSERT INTO calls(user_id,ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cached_tokens,reasoning_tokens,cost,ms,ok,error,usage_estimated,completed) "
+           "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+           (db.uid(), db.now(), ctx.run_id, ctx.chat_id, stage, info.provider, info.id, u.prompt, u.completion, u.cached, u.reasoning, u.cost, ms,
             0 if err else 1, redact(err)[:300] if err else None, int(u.estimated), 0 if err else 1))
 
 

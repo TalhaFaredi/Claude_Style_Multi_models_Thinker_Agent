@@ -47,7 +47,7 @@ def placeholders(name: str) -> set[str]:
 _TITLES = {
     "shared/system_rules": "Shared answer rules",
     "shared/documents_header": "Document context rules",
-    "router/route": "Mode router",
+    "router/route": "Input check (safety and clarity)",
     "checker/check": "Answer checker",
     "thinker/agent": "Thinker agent instructions",
     "thinker/composer": "Thinker composer",

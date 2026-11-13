@@ -30,7 +30,16 @@ PAGES_DIR = DATA_DIR / "pages"
 
 
 def is_linked(chat_id: str, fp: str) -> bool:
-    return db.one("SELECT 1 FROM file_chats WHERE chat_id=? AND fingerprint=?", (chat_id, fp)) is not None
+    """True when the file is attached to a chat of the current user."""
+    return db.one("SELECT 1 FROM file_chats fc JOIN chats c ON c.id=fc.chat_id WHERE fc.chat_id=? AND fc.fingerprint=? AND c.user_id=?",
+                  (chat_id, fp, db.uid())) is not None
+
+
+def user_storage_bytes() -> int:
+    """Size of the distinct files attached to the current user's chats."""
+    r = db.one("SELECT COALESCE(SUM(f.size),0) AS n FROM files f WHERE f.fingerprint IN "
+               "(SELECT fc.fingerprint FROM file_chats fc JOIN chats c ON c.id=fc.chat_id WHERE c.user_id=?)", (db.uid(),))
+    return int(r["n"])
 
 
 def chat_fingerprints(chat_id: str) -> list[str]:
@@ -58,6 +67,8 @@ def ingest(chat_id: str, name: str, data: bytes) -> dict:
     if not data:
         raise FileError("File is empty", 422)
     fp = fingerprint(data)
+    if config.AUTH_REQUIRED and not is_linked(chat_id, fp) and user_storage_bytes() + len(data) > config.MAX_USER_STORAGE_MB * 1024 * 1024:
+        raise FileError(f"Your storage limit of {config.MAX_USER_STORAGE_MB} MB is full. Delete a chat or a file to free space.", 413)
     if db.one("SELECT 1 FROM files WHERE fingerprint=?", (fp,)) is None:
         pages = analyze(name, data)
         target = store_original(fp, name, data)
@@ -123,8 +134,10 @@ async def _read_file(chat_id: str, fp: str, reader: str, text_only: bool = False
     approved = float(max_cost) if max_cost is not None else 0.0
     if plan["total"] > approved + 1e-9:
         raise FileError("Reading costs more than you approved", 402, {"estimate": plan["total"], "plan": plan})
-    from app.core.usage import month_start
-    spent = float(db.one("SELECT COALESCE(SUM(cost),0) AS n FROM calls WHERE ts>=? AND ok=1 AND (stage LIKE 'file:%' OR stage LIKE 'embed:%')", (month_start(),))["n"])
+    from app.core.usage import ensure_can_spend, reading_spent
+    if plan["total"] > 0:
+        ensure_can_spend()   # free text extraction stays available after the allowance is used up
+    spent = reading_spent()
     if spent + plan["total"] > float(settings["monthBudget"]) + 1e-9:
         raise FileError("The monthly reading budget would be exceeded. Choose Text only or raise the monthly budget in Settings.", 402,
                         {"estimate": plan["total"], "monthSpent": spent, "monthBudget": settings["monthBudget"]})

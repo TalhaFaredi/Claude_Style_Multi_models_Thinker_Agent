@@ -9,6 +9,8 @@ from pathlib import Path
 # Tests write uploaded files and generated outputs here, never into the real backend/data folder.
 # Set before `app` is imported, because folder paths are read once at import time.
 os.environ["DATA_DIR"] = str(Path(__file__).resolve().parents[1] / "data_test")
+# The existing suite exercises the single-user core; tests/test_accounts.py switches accounts on explicitly.
+os.environ["AUTH_REQUIRED"] = "0"
 
 import pytest  # noqa: E402
 

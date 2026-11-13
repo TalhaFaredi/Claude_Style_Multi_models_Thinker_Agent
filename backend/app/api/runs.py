@@ -8,14 +8,20 @@ from fastapi import APIRouter, HTTPException
 from app import memory
 from app.api.common import sse
 from app.api.schemas import ApprovalRequest, EditRequest, PermissionRequest, RatingRequest, RunRequest, TeamStepRequest
+from app.core import auth, config, db, usage
 from app.pipeline.engine import manager
 
 router = APIRouter()
 
 
+def _owned(run) -> bool:
+    """A run can only be controlled by the user whose chat it belongs to."""
+    return run is not None and memory.get_chat(run.rc.chat_id) is not None
+
+
 def _run(run_id: str):
     run = manager.get(run_id)
-    if not run or run.finished:
+    if not run or run.finished or not _owned(run):
         raise HTTPException(404, "Unknown or finished run")
     return run
 
@@ -25,8 +31,19 @@ async def create_run(body: RunRequest):
     existing = manager.get(body.id)
     if existing and not existing.finished:
         raise HTTPException(409, "This run is already in progress")
+    memory.ensure_chat(body.chatId)   # refuses a chat that belongs to someone else
+    if config.AUTH_REQUIRED:
+        usage.ensure_can_spend()
+        if not auth.limiter.hit(f"runs:{db.uid()}", config.RUNS_PER_MINUTE, 60):
+            raise HTTPException(429, "You are sending questions too fast. Wait a moment.", headers={"Retry-After": "30"})
+        total, mine = manager.load(db.uid())
+        if mine >= config.MAX_RUNS_PER_USER:
+            raise HTTPException(429, "You already have questions running. Wait for one to finish before starting another.")
+        if total >= config.MAX_CONCURRENT_RUNS:
+            raise HTTPException(503, "The assistant is busy right now. Please try again in a minute.", headers={"Retry-After": "30"})
     req = body.model_dump()
     req["team"] = body.team.clamped()
+    req["budgetUsd"] = usage.limit_budget(float(req["budgetUsd"]))   # the server's ceilings, whatever the client asked for
     try:
         run = await manager.start(req)
     except ValueError as e:
@@ -89,6 +106,8 @@ async def use_team(run_id: str, body: TeamStepRequest):
 @router.post("/api/runs/{run_id}/stop")
 async def stop(run_id: str):
     run = manager.get(run_id)
+    if run is not None and not _owned(run):
+        raise HTTPException(404, "Unknown or finished run")
     stopped = manager.stop(run_id)
     if stopped and run and run.task:
         await asyncio.shield(run.task)  # settle cancellation charges and persist progress before acknowledging

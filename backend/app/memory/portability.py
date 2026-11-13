@@ -14,6 +14,7 @@ every id is validated before it touches the database or the disk; readings are r
 from __future__ import annotations
 
 import hashlib
+import asyncio
 import base64
 import math
 import io
@@ -56,8 +57,8 @@ def _dump(rows) -> bytes:
 
 
 def _export_facts(chat_id: str):
-    chosen = {r["id"]: dict(r) for r in db.q("SELECT DISTINCT f.* FROM facts f LEFT JOIN chat_facts cf ON cf.fact_id=f.id WHERE (f.chat_id=? OR cf.chat_id=?) AND f.deleted=0", (chat_id, chat_id))}
-    all_facts = [dict(r) for r in db.q("SELECT * FROM facts WHERE deleted=0")]
+    chosen = {r["id"]: dict(r) for r in db.q("SELECT DISTINCT f.* FROM facts f LEFT JOIN chat_facts cf ON cf.fact_id=f.id WHERE (f.chat_id=? OR cf.chat_id=?) AND f.deleted=0 AND f.user_id=?", (chat_id, chat_id, db.uid()))}
+    all_facts = [dict(r) for r in db.q("SELECT * FROM facts WHERE deleted=0 AND user_id=?", (db.uid(),))]
     while True:
         ids = set(chosen)
         for fact in all_facts:
@@ -280,7 +281,7 @@ async def import_chat(data: bytes, password: str | None = None) -> dict:
         for f in _json(z, names, "facts.json"):
             if isinstance(f, dict) and str(f.get("text") or "").strip():
                 text, source, ts = str(f["text"]), str(f.get("source") or "imported chat"), float(f.get("ts") or db.now())
-                existing = db.one("SELECT id FROM facts WHERE text=? AND source=? AND ts=? AND deleted=0", (text, source, ts))
+                existing = db.one("SELECT id FROM facts WHERE text=? AND source=? AND ts=? AND deleted=0 AND user_id=?", (text, source, ts, db.uid()))
                 fid = existing["id"] if existing else add_fact(text, source, cid, ts=ts)
                 fact_map[f.get("id", n_facts)] = fid
                 db.run("INSERT OR IGNORE INTO chat_facts(chat_id,fact_id) VALUES(?,?)", (cid, fid))
@@ -290,8 +291,25 @@ async def import_chat(data: bytes, password: str | None = None) -> dict:
                 db.run("UPDATE facts SET replaced_by=?,replaced_at=? WHERE id=?", (fact_map[f["replaced_by"]], f.get("replaced_at"), fact_map[f["id"]]))
 
     seen: set[str] = set()
+    multi = config.AUTH_REQUIRED
+    if multi:
+        # Readings are cached by file fingerprint and shared between accounts. Trusting fingerprints, file records or
+        # readings from an uploaded archive would let one user plant fake text for a file another user uploads later.
+        # So only original files are taken (re-checked and analysed like any upload) and readings are rebuilt on demand.
+        for f in _json(z, names, "files.json"):
+            fp = str(f.get("fingerprint", ""))
+            file_name = Path(str(f.get("name") or "file")).name[:200]
+            original = next((n for n in names if n.startswith(f"files/{fp}")), None) if is_fingerprint(fp) else None
+            if original is None:
+                warnings.append(f"{file_name} was not included in the archive. Attach it again to read it.")
+                continue
+            try:
+                await asyncio.to_thread(files.ingest, cid, file_name, z.read(original))
+                seen.add(fp)
+            except files.FileError as e:
+                warnings.append(f"{file_name} was skipped: {e}")
     selected_readers = {f["fingerprint"]: f.get("reader") for f in _json(z, names, "files.json") if is_fingerprint(str(f.get("fingerprint", "")))}
-    for f in _json(z, names, "files.json"):
+    for f in ([] if multi else _json(z, names, "files.json")):
         fp = str(f.get("fingerprint", ""))
         if not is_fingerprint(fp):
             continue
@@ -304,7 +322,7 @@ async def import_chat(data: bytes, password: str | None = None) -> dict:
                    (fp, file_name, int(f.get("size") or 0), str(f.get("mime") or ""), int(f.get("pages") or 0), kinds if isinstance(kinds,str) else json.dumps(kinds), path, float(f.get("created") or db.now())))
         files.link(cid, fp, f.get("reader"))
         seen.add(fp)
-    for name in sorted(n for n in names if n.startswith("readings/")):
+    for name in sorted(n for n in names if n.startswith("readings/") and not multi):
         rd = json.loads(z.read(name))
         fp, reader = str(rd.get("fingerprint", "")), str(rd.get("reader", ""))
         if not is_fingerprint(fp) or reader not in files.READER_IDS or not isinstance(rd.get("pages"), list):

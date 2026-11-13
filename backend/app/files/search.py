@@ -71,8 +71,8 @@ async def embed_texts(texts: list[str], ctx: llm.CallContext | None = None) -> l
                 cost = float(usage.get("cost") if usage.get("cost") is not None else embedding_cost(actual_tokens))
                 reservation.settle("embed:index", cost, actual_tokens, 0, estimated=not bool(usage))
                 completed = True
-                db.run("INSERT INTO calls(ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cost,ms,ok,usage_estimated) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-                       (db.now(), ctx.run_id, ctx.chat_id, "embed:index", "openrouter", config.EMBED_MODEL, actual_tokens, 0, cost,
+                db.run("INSERT INTO calls(user_id,ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cost,ms,ok,usage_estimated) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       (db.uid(), db.now(), ctx.run_id, ctx.chat_id, "embed:index", "openrouter", config.EMBED_MODEL, actual_tokens, 0, cost,
                         int((time.monotonic() - started) * 1000), 1, int(not usage)))
                 out.extend(d["embedding"] for d in sorted(data["data"], key=lambda d: d.get("index", 0)))
             finally:
@@ -82,8 +82,8 @@ async def embed_texts(texts: list[str], ctx: llm.CallContext | None = None) -> l
                         reservation.release()
                     else:
                         reservation.settle("embed:index", estimate, tokens, 0, estimated=True)
-                    db.run("INSERT INTO calls(ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cost,ms,ok,usage_estimated,completed,error) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                           (db.now(), ctx.run_id, ctx.chat_id, "embed:index", "openrouter", config.EMBED_MODEL, 0 if known_unbilled else tokens, 0,
+                    db.run("INSERT INTO calls(user_id,ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cost,ms,ok,usage_estimated,completed,error) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                           (db.uid(), db.now(), ctx.run_id, ctx.chat_id, "embed:index", "openrouter", config.EMBED_MODEL, 0 if known_unbilled else tokens, 0,
                             0 if known_unbilled else estimate, int((time.monotonic() - started) * 1000), int(not known_unbilled),
                             int(not known_unbilled), 0, "Embedding request failed; charge is conservatively estimated" if not known_unbilled else f"HTTP {status}"))
         return out
@@ -179,7 +179,8 @@ async def reindex_file(chat_id: str, fp: str, max_cost: float) -> dict:
             raise FileError(plan["reason"], 503)
         if plan["usd"] > max_cost + 1e-12:
             raise FileError("Meaning reindexing costs more than you approved", 402, {"estimate": plan["usd"]})
-        spent = float(db.one("SELECT COALESCE(SUM(cost),0) usd FROM calls WHERE ts>=? AND (stage LIKE 'file:%' OR stage LIKE 'embed:%')", (month_start(),))["usd"])
+        from app.core.usage import reading_spent
+        spent = reading_spent()
         if spent + plan["usd"] > float(db.get_setting("monthBudget", 5.0)) + 1e-12:
             raise FileError("The monthly reading budget would be exceeded. Keep keyword search or change the budget in Settings.", 402)
         chunks = _reindex_chunks(chat_id, fp)

@@ -32,6 +32,8 @@ export async function toError(res: Response): Promise<ApiError> {
 }
 
 const TOKEN_KEY = "assistantApiToken";
+const TOKEN_GATE_MESSAGE = "This server needs its access token.";   // keep in step with TokenGate in backend/app/main.py
+const AUTH_PAGES = ["/login", "/signup", "/forgot", "/reset"];
 
 function accessToken(): string {
   try {
@@ -41,16 +43,48 @@ function accessToken(): string {
   }
 }
 
+/** Browser-side leftovers of a session (preferences, the old access token). Called on sign-in and sign-out so two people sharing a browser never see each other's. */
+export function clearLocalState(): void {
+  try {
+    for (const key of ["mma-chat-config-live", "mma-settings", TOKEN_KEY]) window.localStorage.removeItem(key);
+  } catch {
+    /* storage blocked: nothing was kept */
+  }
+}
+
+/** Where to go after signing in: a path on this site, never an address someone else chose. */
+export function safeNext(raw: string | null | undefined, fallback = "/app"): string {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/\\") ? raw : fallback;
+}
+
+async function detailOf(res: Response): Promise<{ code?: string; detail?: unknown }> {
+  try {
+    return (await res.clone().json()) as { code?: string; detail?: unknown };
+  } catch {
+    return {};
+  }
+}
+
 /**
- * fetch() for the backend. A server started with APP_TOKEN answers 401 without the token: the user is asked
- * for it once, it is kept in this browser only, and the request is sent again.
+ * fetch() for the backend. Cookies travel with every call (the session). When the server says the session is gone the user is sent to
+ * the sign-in page and brought back afterwards. A server in single-user mode started with APP_TOKEN answers 401 without the token instead:
+ * the user is asked for it once, it is kept in this browser only, and the request is sent again.
  */
 export async function apiFetch(url: string, init: RequestInit = {}, retried = false): Promise<Response> {
   const sent = accessToken();
   const headers = new Headers(init.headers);
   if (sent) headers.set("Authorization", `Bearer ${sent}`);
-  const res = await fetch(url, { ...init, headers });
-  if (res.status !== 401 || retried || typeof window === "undefined") return res;
+  const res = await fetch(url, { ...init, headers, credentials: "include" });
+  if (res.status !== 401 || typeof window === "undefined") return res;
+  const body = await detailOf(res);
+  if (body.code === "auth_required") {
+    if (!AUTH_PAGES.includes(window.location.pathname)) {
+      window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+    }
+    return res;
+  }
+  // Only the single-user token gate asks for a token. Any other 401 (wrong password, "not signed in") is an answer, not a prompt.
+  if (retried || body.detail !== TOKEN_GATE_MESSAGE) return res;
   let next = accessToken();   // another request may have asked already while this one was in flight
   if (next === sent) {
     next = (window.prompt("This server needs its access token (APP_TOKEN in the server's .env):") ?? "").trim();
@@ -107,6 +141,8 @@ export interface ServerConfig {
   capabilities: { codeSandbox: boolean; zipPassword: boolean; embeddings: boolean; webSearch: boolean };
   settings: ServerSettings;
   monthUsd: number;
+  /** Live accounts: the most this user may spend per month (set by the operator). */
+  monthCapUsd?: number;
   readingUsd?: number;
   readingBudgetPercent?: number;
   readingAlarm?: boolean;

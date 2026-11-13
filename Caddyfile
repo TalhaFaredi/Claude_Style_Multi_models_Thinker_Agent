@@ -1,0 +1,42 @@
+# Caddy: automatic HTTPS (Let's Encrypt) and one public address for both halves of the app.
+#   /api/* and /health  ->  backend (FastAPI)      everything else  ->  frontend (Next.js)
+# Same origin for the website and the API means the login cookie is first-party and no CORS is needed.
+{
+	email {$ACME_EMAIL}
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	@api path /api/* /health
+	handle @api {
+		# 25 MB uploads; archive imports are limited to MAX_IMPORT_MB by the backend (+ headroom for the multipart wrapper).
+		request_body {
+			max_size 230MB
+		}
+		header Cache-Control "no-store"
+		reverse_proxy backend:8000 {
+			# Answers stream as Server-Sent Events: never buffer them, and allow a long Planner run.
+			flush_interval -1
+			transport http {
+				response_header_timeout 20m
+				read_timeout 20m
+			}
+		}
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

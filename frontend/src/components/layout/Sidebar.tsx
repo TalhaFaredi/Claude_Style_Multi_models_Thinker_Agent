@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { money } from "@/domain/format";
 import { isLive } from "@/services/api";
+import { auth, type Account } from "@/services/auth";
 import { useChatStore } from "@/store/chatStore";
 import { useChatsStore } from "@/store/chatsStore";
 import { useSettingsStore } from "@/store/settingsStore";
@@ -22,6 +24,10 @@ export function Sidebar() {
   const all = useChatsStore((s) => s.chats);
   const load = useChatsStore((s) => s.load);
   const first = useRef(true);
+  const [me, setMe] = useState<Account | null>(null);
+  useEffect(() => {
+    if (isLive) auth.me().then(setMe).catch(() => setMe(null));
+  }, []);
 
   // Live: the server searches titles and message text (and dates). Mock: filter the sample list below.
   useEffect(() => {
@@ -66,10 +72,11 @@ export function Sidebar() {
         <Icon name="gear" size={18} />Settings, memory, data
       </button>
       <div className="row side-foot">
-        <span className="mark dark">Y</span>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <span className="strong">You</span>
+        <span className="mark dark">{(me?.email ?? "You").charAt(0).toUpperCase()}</span>
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <span className="strong" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={me?.email}>{me?.email ?? "You"}</span>
           <span className={overMonth ? "hint warn" : "hint"}>Spent this month {money(spent)} of {money(budget)}{overMonth ? " (over 80%)" : ""}</span>
+          {me && <span className="hint"><Link href="/account">Account</Link>{me.isAdmin && <> &middot; <Link href="/admin">Admin</Link></>}</span>}
         </div>
       </div>
     </nav>

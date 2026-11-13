@@ -1,0 +1,76 @@
+# Production stack:  docker compose up -d --build
+# Read DEPLOYMENT.md first. Everything is configured in the .env file next to this one (copy .env.production.example).
+name: assistant
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # certificates: keep this volume
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      APP_ENV: production
+      DATA_DIR: /data
+      PUBLIC_URL: https://${SITE_DOMAIN}
+      CORS_ORIGINS: https://${SITE_DOMAIN}
+    volumes:
+      - appdata:/data            # the SQLite database, uploaded files, generated files
+    expose:
+      - "8000"                   # reachable only from the other containers, never published
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: https://${SITE_DOMAIN}
+        NEXT_PUBLIC_SITE_URL: https://${SITE_DOMAIN}
+        NEXT_PUBLIC_SITE_NAME: ${SITE_NAME:-Multi-Mode Assistant}
+        NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+        NEXT_PUBLIC_OPERATOR_NAME: ${OPERATOR_NAME:-}
+        NEXT_PUBLIC_LEGAL_REVIEWED: ${LEGAL_REVIEWED:-0}
+    restart: unless-stopped
+    expose:
+      - "3000"
+
+  backup:
+    build: ./backend
+    restart: unless-stopped
+    command: ["python", "-m", "app.backup", "--loop", "24", "--keep", "14", "--files"]
+    # Root, because Docker creates ./backups owned by root and the image's normal user could not write there. The job only
+    # reads the database through SQLite's online-backup API and writes into /backups.
+    user: "0:0"
+    healthcheck:
+      disable: true              # the image's health check probes the web server, which this container does not run
+    environment:
+      APP_ENV: production
+      DATA_DIR: /data
+      BACKUP_DIR: /backups
+    volumes:
+      - appdata:/data            # not read-only: SQLite needs to create its -shm file to read a WAL database
+      - ./backups:/backups       # on the host: copy this folder off the server (see DEPLOYMENT.md)
+    depends_on:
+      - backend
+
+volumes:
+  appdata:
+  caddy_data:
+  caddy_config:

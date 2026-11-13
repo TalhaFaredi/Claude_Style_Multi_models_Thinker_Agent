@@ -7,6 +7,7 @@ import re
 import uuid
 
 from app.core import db
+from app.core.errors import UnknownChat
 from app.core.tokens import estimate_tokens
 from app.memory.settings import get_settings
 
@@ -14,12 +15,16 @@ from app.memory.settings import get_settings
 def create_chat(title: str = "New chat", temp: bool = False, chat_id: str | None = None) -> dict:
     cid = chat_id or uuid.uuid4().hex[:12]
     t = db.now()
-    db.run("INSERT OR IGNORE INTO chats(id,title,created,updated,temp) VALUES(?,?,?,?,?)", (cid, title[:80], t, t, 1 if temp else 0))
-    return get_chat(cid)  # type: ignore[return-value]
+    db.run("INSERT OR IGNORE INTO chats(id,title,created,updated,temp,user_id) VALUES(?,?,?,?,?,?)", (cid, title[:80], t, t, 1 if temp else 0, db.uid()))
+    chat = get_chat(cid)
+    if chat is None:   # the id is taken by another account's chat: behave as if it does not exist
+        raise UnknownChat("Unknown chat")
+    return chat
 
 
 def get_chat(chat_id: str) -> dict | None:
-    r = db.one("SELECT * FROM chats WHERE id=?", (chat_id,))
+    """The one ownership check: a chat is only visible to the user who owns it."""
+    r = db.one("SELECT * FROM chats WHERE id=? AND user_id=?", (chat_id, db.uid()))
     return dict(r) if r else None
 
 
@@ -31,14 +36,15 @@ def list_chats(q: str = "") -> list[dict]:
     has_msgs = "EXISTS (SELECT 1 FROM messages m WHERE m.chat_id=c.id)"   # a chat with no message yet is not listed
     if q.strip():
         rows = db.q(f"SELECT DISTINCT c.* FROM chats c LEFT JOIN msg_fts f ON f.chat_id=c.id AND f.msg_fts MATCH ? "
-                    f"WHERE {has_msgs} AND (c.title LIKE ? OR f.msg_id IS NOT NULL) ORDER BY c.updated DESC LIMIT 100", (db.fts_query(q) or '""', f"%{q}%"))
+                    f"WHERE c.user_id=? AND {has_msgs} AND (c.title LIKE ? OR f.msg_id IS NOT NULL) ORDER BY c.updated DESC LIMIT 100",
+                    (db.fts_query(q) or '""', db.uid(), f"%{q}%"))
     else:
-        rows = db.q(f"SELECT c.* FROM chats c WHERE {has_msgs} ORDER BY c.updated DESC LIMIT 100")
+        rows = db.q(f"SELECT c.* FROM chats c WHERE c.user_id=? AND {has_msgs} ORDER BY c.updated DESC LIMIT 100", (db.uid(),))
     return [{"id": r["id"], "title": r["title"], "updated": r["updated"], "temp": bool(r["temp"])} for r in rows]
 
 
 def rename_chat(chat_id: str, title: str) -> None:
-    db.run("UPDATE chats SET title=? WHERE id=?", (title[:80], chat_id))
+    db.run("UPDATE chats SET title=? WHERE id=? AND user_id=?", (title[:80], chat_id, db.uid()))
 
 
 def add_message(chat_id: str, role: str, content: str, *, model: str | None = None, cost: float = 0.0, meta: dict | None = None,
@@ -86,7 +92,10 @@ def delete_message(chat_id: str, mid: str) -> bool:
 
 
 def rate_message(mid: str, value: int) -> bool:
-    return db.run("UPDATE messages SET rating=? WHERE id=? AND role='assistant'", (value, mid)) is not None
+    with db._lock:
+        cur = db.conn().execute("UPDATE messages SET rating=? WHERE id=? AND role='assistant' AND chat_id IN (SELECT id FROM chats WHERE user_id=?)",
+                                (value, mid, db.uid()))
+        return cur.rowcount > 0
 
 
 def ui_messages(chat_id: str) -> list[dict]:
@@ -112,14 +121,14 @@ def delete_chat(chat_id: str, delete_memories: bool) -> dict:
     from app.memory.facts import delete_fact
     from app.output import delete_chat_artifacts
 
-    fact_ids = [r["id"] for r in db.q("SELECT id FROM facts WHERE chat_id=?", (chat_id,))] if delete_memories else []
+    fact_ids = [r["id"] for r in db.q("SELECT id FROM facts WHERE chat_id=? AND user_id=?", (chat_id, db.uid()))] if delete_memories else []
     with db.tx() as c:
         c.execute("DELETE FROM msg_fts WHERE chat_id=?", (chat_id,))
         c.execute("DELETE FROM messages WHERE chat_id=?", (chat_id,))
         c.execute("DELETE FROM ledger WHERE chat_id=?", (chat_id,))
         c.execute("DELETE FROM summaries WHERE chat_id=?", (chat_id,))
         c.execute("DELETE FROM chat_facts WHERE chat_id=?", (chat_id,))
-        c.execute("DELETE FROM chats WHERE id=?", (chat_id,))
+        c.execute("DELETE FROM chats WHERE id=? AND user_id=?", (chat_id, db.uid()))
         # the cost log (calls table) is kept on purpose: it is the books and holds no chat content
     for fid in fact_ids:
         delete_fact(fid)

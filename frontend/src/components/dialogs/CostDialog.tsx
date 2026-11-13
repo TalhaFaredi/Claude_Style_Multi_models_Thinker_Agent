@@ -18,7 +18,7 @@ export default function CostDialog() {
   const close = useUiStore((s) => s.close);
   const estimate = useEstimate();
   const cheap = useModelsStore((s) => s.presets.fast);
-  const single = mode === "simple" || mode === "auto";
+  const single = mode === "simple";
 
   const makeCheaper = () => {
     if (single) setModel(cheap);

@@ -95,7 +95,7 @@ export interface ContextInfo {
 }
 
 export type RunEvent =
-  /** Auto mode resolved to a mode (C5/C6). `reason` is the one-line routing note. */
+  /** The mode this run uses: always the one the user picked. `reason` is kept for old saved answers and is empty. */
   | { type: "route"; kind: RunKind; reason: string }
   | { type: "status"; text: string }
   | { type: "thinking"; notes: string[]; seconds?: number }
@@ -129,8 +129,8 @@ export interface RunRequest {
   id: string;
   /** Chat this run belongs to (live backend). */
   chatId: string;
-  /** What the user picked. Auto is resolved by the router (live) or by `kind` (mock). */
-  mode: "auto" | "simple" | "thinker" | "planner";
+  /** What the user picked. */
+  mode: "simple" | "thinker" | "planner";
   /** Mock runner only: the already-resolved mode. */
   kind: RunKind;
   prompt: string;

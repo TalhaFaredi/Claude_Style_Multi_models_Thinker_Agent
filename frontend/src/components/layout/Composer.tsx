@@ -69,7 +69,7 @@ export const Composer = memo(function Composer() {
       </label>
       <div className="row">
         <button type="button" className="iconbtn" aria-label="Attach a file" onClick={() => open("file")}><Icon name="paperclip" size={18} /></button>
-        <button type="button" className="costlink" onClick={() => open("budget")}>About {money(estimate)} · budget {money(budget)}</button>
+        <button type="button" className="costlink" onClick={() => open("budget")}>Estimated cost about {money(estimate)} · limit {money(budget)} per question</button>
         <div className="grow" />
         {guard && <span className="hint warn">{guard}</span>}
         {running ? (

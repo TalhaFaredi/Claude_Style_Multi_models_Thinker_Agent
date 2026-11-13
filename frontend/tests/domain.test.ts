@@ -4,7 +4,8 @@ import { estimateCost, fileReadingCost, teamCalls } from "@/domain/cost";
 import type { AiMessage } from "@/domain/messages";
 import { money } from "@/domain/format";
 import { reduceRunEvent } from "@/domain/reduceRunEvent";
-import { routeAuto } from "@/domain/router";
+import { jobLabel, selectedModels } from "@/components/chat/CallUsageSection";
+import { setupLabel, setupSentence } from "@/domain/describe";
 import { DEMO_FILES } from "@/data/sample";
 import { DEFAULT_SIMPLE, DEFAULT_TEAM } from "@/domain/defaults";
 import { buildScript } from "@/services/runner/mockScript";
@@ -52,11 +53,23 @@ describe("cost (spec Part 1 §7, Part 2 §4)", () => {
   });
 });
 
-describe("Auto router (C5)", () => {
-  it("routes by intent", () => {
-    expect(routeAuto("Make a 2-page PDF report").kind).toBe("planner");
-    expect(routeAuto("Should we use one model or many?").kind).toBe("thinker");
-    expect(routeAuto("What is a token?").kind).toBe("simple");
+describe("the user picks the mode: plain-word labels, no Auto", () => {
+  it("the top-bar button says what will answer", () => {
+    expect(setupLabel("simple", DEFAULT_SIMPLE, DEFAULT_TEAM, "auto")).toMatch(/^Model: /);
+    expect(setupLabel("thinker", DEFAULT_SIMPLE, DEFAULT_TEAM, "auto")).toMatch(/^Team: /);
+    expect(setupLabel("planner", DEFAULT_SIMPLE, DEFAULT_TEAM, "simple")).toMatch(/^Plan with /);
+    for (const mode of ["simple", "thinker", "planner"] as const) {
+      expect(setupLabel(mode, DEFAULT_SIMPLE, DEFAULT_TEAM, "auto")).not.toMatch(/auto/i);
+      expect(setupSentence(mode, DEFAULT_SIMPLE, DEFAULT_TEAM, "simple")).not.toMatch(/Auto/);
+    }
+  });
+  it("cost rows are named by the job and split into your models and helpers", () => {
+    expect(jobLabel("router")).toBe("Safety check before answering");
+    expect(jobLabel("answer")).toBe("Answer");
+    expect(jobLabel("something:new")).toBe("something:new");
+    const snapshot = { simple: { ...DEFAULT_SIMPLE, model: "deepseek/deepseek-chat" }, team: { ...DEFAULT_TEAM, source: "mixed" as const, mixed: ["a/one", "b/two"], composer: "c/three" }, runIn: "auto" as const };
+    expect([...selectedModels({ kind: "simple", snapshot })]).toEqual(["deepseek/deepseek-chat"]);
+    expect([...selectedModels({ kind: "thinker", snapshot })].sort()).toEqual(["a/one", "b/two", "c/three", "deepseek/deepseek-chat"]);
   });
 });
 
@@ -84,13 +97,17 @@ describe("reduceRunEvent", () => {
     m = reduceRunEvent(m, { type: "text", delta: "good answer" });
     expect(m.text).toBe("good answer");
   });
-  it("Auto routing, warnings and thinking time arrive as events", () => {
+  it("the mode, warnings and thinking time arrive as events", () => {
     let m = reduceRunEvent(blank, { type: "route", kind: "planner", reason: "x" });
     expect(m.kind).toBe("planner");
     m = reduceRunEvent(m, { type: "warning", message: "Stopped at the budget" });
     m = reduceRunEvent(m, { type: "warning", message: "Check failed" });
     expect(m.warning).toBe("Stopped at the budget Check failed");
     expect(reduceRunEvent(m, { type: "thinking", notes: ["a"], seconds: 7 }).thoughtSeconds).toBe(7);
+  });
+  it("a helper's question before a team run is marked, so it is not shown as the team's answer", () => {
+    expect(blank.clarify).toBeUndefined();
+    expect(reduceRunEvent(blank, { type: "clarify", question: "Which report?" }).clarify).toBe(true);
   });
   it("window and summarize events belong to the chat, not the answer", () => {
     expect(reduceRunEvent(blank, { type: "context", percent: 91 })).toBe(blank);

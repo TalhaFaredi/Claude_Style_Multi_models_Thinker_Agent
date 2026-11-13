@@ -50,7 +50,7 @@ export function AnswerBlock({ m }: { m: AiMessage }) {
         </div>
       )}
       {(m.status === "done" || m.status === "stopped") && <MetaLine m={m} />}
-      {(m.callUsages?.length ?? 0) > 0 && <CallUsageSection entries={m.callUsages ?? []} />}
+      {(m.callUsages?.length ?? 0) > 0 && <CallUsageSection m={m} />}
     </article>
   );
 }

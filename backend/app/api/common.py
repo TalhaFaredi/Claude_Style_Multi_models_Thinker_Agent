@@ -35,5 +35,5 @@ def defaults() -> dict:
         "simple": {"model": bal, "thinking": "off", "style": "balanced", "tools": {"web": True, "code": False, "files": True}, "maxTokens": 1200},
         "team": {"source": "same", "model": fast, "agents": 3, "mixed": [fast, "mistralai/mistral-nemo", "google/gemma-3-12b-it"],
                  "style": "independent", "rounds": 2, "composer": "auto"},   # "on their own" is the spec's default
-        "runIn": "auto", "budget": 0.25,
+        "mode": "simple", "runIn": "auto", "budget": 0.25,
     }

@@ -20,6 +20,10 @@ def get_settings() -> dict:
         v = db.get_setting(k)
         if v is not None:
             s[k] = v
+    if config.AUTH_REQUIRED:   # the operator's caps always win over what a user saved
+        from app.core import usage
+        s["monthBudget"] = min(float(s["monthBudget"]), usage.month_cap())
+        s["askLimit"] = min(float(s["askLimit"]), config.MAX_RUN_USD)
     return s
 
 
@@ -47,13 +51,16 @@ def update_settings(patch: dict) -> dict:
             if not math.isfinite(v):
                 raise ValueError(f"{k} must be a finite number")
             v = max(0.0, min(1000.0, v))
+            if config.AUTH_REQUIRED:
+                from app.core import usage
+                v = min(v, usage.month_cap() if k == "monthBudget" else config.MAX_RUN_USD)
         elif isinstance(DEFAULT_SETTINGS[k], bool):
             if not isinstance(v, bool):
                 raise ValueError(f"{k} must be true or false")
         validated[k] = v
     with db.tx() as conn:
         for key, value in validated.items():
-            conn.execute("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, json.dumps(value)))
+            conn.execute("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (db.setting_key(key), json.dumps(value)))
     return get_settings()
 
 

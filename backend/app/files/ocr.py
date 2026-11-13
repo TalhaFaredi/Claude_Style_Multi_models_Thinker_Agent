@@ -72,8 +72,8 @@ async def api_read(image: bytes, ctx: llm.CallContext) -> str:
         inp, out = int(usage.get("prompt_tokens") or model.context), int(usage.get("completion_tokens") or 0)
         reservation.settle("file:ocr_api", cost, inp, out, estimated=not bool(usage))
         completed = True
-        db.run("INSERT INTO calls(ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cost,ms,ok,usage_estimated) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-            (db.now(), ctx.run_id, ctx.chat_id, "file:ocr_api", "openrouter", model.id, inp, out, cost, int((time.monotonic()-started)*1000), 1, int(not usage)))
+        db.run("INSERT INTO calls(user_id,ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cost,ms,ok,usage_estimated) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (db.uid(), db.now(), ctx.run_id, ctx.chat_id, "file:ocr_api", "openrouter", model.id, inp, out, cost, int((time.monotonic()-started)*1000), 1, int(not usage)))
         return "\n".join(parsed) or str(message.get("content") or "")
     finally:
         if not completed:
@@ -82,8 +82,8 @@ async def api_read(image: bytes, ctx: llm.CallContext) -> str:
                 reservation.release()
             else:
                 reservation.settle("file:ocr_api", expected, model.context, 0, estimated=True)
-            db.run("INSERT INTO calls(ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cost,ms,ok,usage_estimated,completed,error) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (db.now(),ctx.run_id,ctx.chat_id,"file:ocr_api","openrouter",model.id,0 if known_unbilled else model.context,0,
+            db.run("INSERT INTO calls(user_id,ts,run_id,chat_id,stage,provider,model,in_tokens,out_tokens,cost,ms,ok,usage_estimated,completed,error) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (db.uid(), db.now(),ctx.run_id,ctx.chat_id,"file:ocr_api","openrouter",model.id,0 if known_unbilled else model.context,0,
                  0 if known_unbilled else expected,int((time.monotonic()-started)*1000),int(not known_unbilled),int(not known_unbilled),0,
                  "OCR request failed; possible charge is conservatively estimated"))
 
